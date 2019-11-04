@@ -1,0 +1,19 @@
+{
+  "name": "botazo-calendar",
+  "version": "1.0.0",
+  "description": "Slackbot that works with your calendar",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.socs.uoguelph.ca/acandeli/botazo-calendar.git"
+  },
+  "author": "botazo",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.19.0",
+    "slackbots": "^1.2.0"
+  }
+}
