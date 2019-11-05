@@ -1,5 +1,4 @@
 const SlackBot = require('slackbots');
-const axios = require('axios');
 
 var fs = require('fs');
 const readline = require('readline');
@@ -7,34 +6,37 @@ const {google} = require('googleapis');
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
 
+// Declares bot with token for slack group it is in
 const bot = new SlackBot({
     token: 'xoxb-759347243669-821664786679-vMYPENCAesn1EzDBSJp5QwZo',
     name: 'calendarbot'
 });
 
 // Start Handler
-
 bot.on('start', () => {
     const params = {
         icon_emoji: ':calendar:'
     };
 });
 
-//Error handling
+// Error handling
 bot.on('error', (err) => console.log(err));
 
-//Message handler
+// Triggers bot when message is sent to it to handle
 bot.on('message', (data) => {
    if (data.type !== 'message') {
        return;
    }
    handleMessage(data);
 });
-// Respond to data
+
+/**
+  * Handles message sent to calendar-bot
+  * @param {String} data
+  */
 function handleMessage(data) {
     var message = data.text;
     var user = data.user;
-    console.log(data);
    if (/^calendar\sday$/.test(message)) {
         callApiFunction(user, user, listDayEvents);
    } else if(/^calendar\sday\s<@\w+>$/.test(message)) {
@@ -62,18 +64,26 @@ function handleMessage(data) {
    }
 }
 
+/**
+  * From message, retrieves the user who message will be sent to
+  * @param {String} message
+  * @return {String}
+  */
 function getUserFromMessage(message) {
     var dest = (message.match(/<@.+>/g))[0];
     dest = dest.substr(2, dest.length - 3);
-    console.log(dest);
     return dest;
 }
 
+/**
+  * Lists help options when user wants help using calendar bot
+  * @param {String} user
+  */
 function helpMessage(user) {
     var username = getNameFromId(user);
     bot.postMessageToUser(username,"Welcome to the calendar bot! Here is a list of commands:\n"
     + "1) calendar help - lists commands for the calendar bot (you're donig this right now!)\n"
-    + "2) calendar five - lists the first five events you have in your calendar\n"
+    + "2) calendar five - lists the next five events you have in your calendar\n"
     + "3) calendar morning @[user] - sends your morning calendar to the specified user or leave it blank to messsage yourself\n"
     + "4) calendar day @[user] - sends your days calendar to the specified user or leave it blank to message yourself\n"
     + "5) calendar week @[user] - sends your week calendar to the specified user or leave it blank to message yourself\n"
@@ -139,6 +149,12 @@ function getNameFromId(user) {
     }
 }
 
+/**
+  * Lists next 5 calendar events as message sent to user in slack
+  * @param {String} auth
+  * @param {String} userSent
+  * @param {String} destUser
+  */
 function listNextFiveEvents(auth, userSent, destUser) {
   var destUsername = getNameFromId(destUser);
   const calendar = google.calendar({version: 'v3', auth});
@@ -156,8 +172,13 @@ function listNextFiveEvents(auth, userSent, destUser) {
   });
 }
 
+/**
+  * Lists morning events as message sent to user in slack
+  * @param {String} auth
+  * @param {String} userSent
+  * @param {String} destUser
+  */
 function listMorningEvents(auth, user, destUser) {
-  //parse message for receiving user
   var destUsername = getNameFromId(destUser);
   const calendar = google.calendar({version: 'v3', auth});
   calendar.events.list({
@@ -174,6 +195,12 @@ function listMorningEvents(auth, user, destUser) {
   });  
 }
 
+/**
+  * Lists daily events as message sent to user in slack
+  * @param {String} auth
+  * @param {String} userSent
+  * @param {String} destUser
+  */
 function listDayEvents(auth, userSent, destUser) {
   //parse message for receiving user
   var destUsername = getNameFromId(destUser);
@@ -192,6 +219,12 @@ function listDayEvents(auth, userSent, destUser) {
   });  
 }
 
+/**
+  * Lists weekly events as message sent to user in slack
+  * @param {String} auth
+  * @param {String} userSent
+  * @param {String} destUser
+  */
 function listWeekEvents(auth, userSent, destUser) {
   var destUsername = getNameFromId(destUser);
   const calendar = google.calendar({version: 'v3', auth});
@@ -199,7 +232,6 @@ function listWeekEvents(auth, userSent, destUser) {
     calendarId: 'primary',
     timeMin: (getCurrentDate() + "T07:00:00-05:00").toString(),
     timeMax: (getDaysAwayDate(7) + "T18:30:00-05:00").toString(),
-    
     singleEvents: true,
     orderBy: "startTime",
   }, (err, res) => {
@@ -210,22 +242,35 @@ function listWeekEvents(auth, userSent, destUser) {
   });
 }
 
+/**
+  * Gets current date using JS functions and returns it to user in string format
+  * @returns {String}
+  */
 function getCurrentDate(){
   let date = "";
   let day = new Date();
   date = day.getFullYear() + "-" + dateAppendZero(day.getMonth() + 1) + "-" + dateAppendZero(day.getDate());  
-
   return date;
 }
+
+/**
+  * Intakes day count and retrieves the calendar date for current+days away and returns it as a string
+  * @param {int} days
+  * @returns {String}
+  */
 function getDaysAwayDate(days) {
   let date = ""
   let day = new Date();
   day.setDate(day.getDate() + days);
   date = day.getFullYear() + "-" + dateAppendZero(day.getMonth() + 1) + "-" + dateAppendZero(day.getDate());  
-  
   return date;
 }
 
+/**
+  * Intakes number and checks if it needs a leading zero to meet format criteria
+  * @param {int} dateItem
+  * @returns {int}
+  */
 function dateAppendZero(dateItem) {
   if (dateItem.toString().length == 1) {
     dateItem = "0" + dateItem;
@@ -233,8 +278,12 @@ function dateAppendZero(dateItem) {
   return dateItem;
 }
 
+/**
+  * Intakes date in JS format as 24hr format and returns the date string in a 12 hour format with AM/PM
+  * @param {String} date
+  * @returns {Date}
+  */
 function parseTimeOfEvent(date){
-  
   let time = new Date(date);
   let hours = time.getHours();
   
@@ -251,9 +300,24 @@ function parseTimeOfEvent(date){
   return time;
 }
 
+/**
+  * Gets index of day of week and returns day as string accordingly
+  * @param {int} index
+  * @returns {String}
+  */
 function parseWeekdayOfEvent(index) {
   let daysOfWeek = ["SUN", "MON", "TUES", "WED", "THURS", "FRI", "SAT"];
   return daysOfWeek[index];
+}
+
+/**
+  * Gets index of month and returns month as string accordingly
+  * @param {int} index
+  * @returns {String}
+  */
+function parseMonthOfEvent(index) {
+  let monthOfYear = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  return monthOfYear[index];
 }
 
 function eventsToString(events, userSent) {
@@ -262,12 +326,11 @@ function eventsToString(events, userSent) {
          eventString += "<@"+userSent+"> has sent you part of their calendar:\n"
          let prevDayNum = -1;
          events.map((event, i) => {
-         console.log(event);
            const start = event.start.dateTime || event.start.date;
            const end = event.end.dateTime || event.end.date;
            const day = new Date(start);
            if (day.getDay() !== prevDayNum) {
-            eventString += `${parseWeekdayOfEvent(day.getDay())}\n`;
+            eventString += `${parseWeekdayOfEvent(day.getDay())} - ${parseMonthOfEvent(day.getMonth())} ${day.getDate()}\n`;
             prevDayNum = day.getDay();
            }
            eventString += `\t\t${parseTimeOfEvent(start)} - ${parseTimeOfEvent(end)}: ${event.summary}\n`;
