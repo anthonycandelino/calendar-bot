@@ -45,6 +45,11 @@ function handleMessage(data) {
    } else if(/^calendar\sweek\s<@\w+>$/.test(message)) {
         let dest = getUserFromMessage(message);
         callApiFunction(user, dest, listWeekEvents);
+   } else if (/^calendar\smorning$/.test(message)) {
+      callApiFunction(user, user, listMorningEvents);
+   } else if(/^calendar\smorning\s<@\w+>$/.test(message)) {
+      let dest = getUserFromMessage(message);
+      callApiFunction(user, dest, listMorningEvents);
    } else if (/^calendar\shelp$/.test(message)) {
         helpMessage(user);
    } else if (/^calendar\sfive$/.test(message)) {
@@ -69,9 +74,10 @@ function helpMessage(user) {
     bot.postMessageToUser(username,"Welcome to the calendar bot! Here is a list of commands:\n"
     + "1) calendar help - lists commands for the calendar bot (you're donig this right now!)\n"
     + "2) calendar five - lists the first five events you have in your calendar\n"
-    + "3) calendar day @[user] - sends your days calendar to the specified user or leave it blank to message yourself\n"
-    + "4) calendar week @[user] - sends your week calendar to the specified user or leave it blank to message yourself\n"
-    + "5) URL: [authentication] - used when first setting up your google accounr to a calendar\n");
+    + "3) calendar morning @[user] - sends your morning calendar to the specified user or leave it blank to messsage yourself\n"
+    + "4) calendar day @[user] - sends your days calendar to the specified user or leave it blank to message yourself\n"
+    + "5) calendar week @[user] - sends your week calendar to the specified user or leave it blank to message yourself\n"
+    + "6) URL: [authentication] - used when first setting up your google accounr to a calendar\n");
 }
 
 function storeAuthentication(message, user) {
@@ -150,13 +156,31 @@ function listNextFiveEvents(auth, userSent, destUser) {
   });
 }
 
+function listMorningEvents(auth, user) {
+  //parse message for receiving user
+  var username = getNameFromId(user);
+  const calendar = google.calendar({version: 'v3', auth});
+  calendar.events.list({
+    calendarId: 'primary',
+    timeMin: (getCurrentDate() + "T07:00:00-05:00").toString(),
+    timeMax: (getCurrentDate() + "T12:00:00-05:00").toString(),
+    singleEvents: true,
+    orderBy: "startTime",
+  }, (err, res) => {
+    if (err) return console.log('The API returned an error: ' + err);
+    const events = res.data.items;
+    let retString = eventsToString(events);
+    bot.postMessageToUser(username,retString);
+  });  
+}
+
 function listDayEvents(auth, userSent, destUser) {
   //parse message for receiving user
   var destUsername = getNameFromId(destUser);
   const calendar = google.calendar({version: 'v3', auth});
   calendar.events.list({
     calendarId: 'primary',
-    timeMin: (getCurrentDate() + "T08:30:00-05:00").toString(),
+    timeMin: (getCurrentDate() + "T07:00:00-05:00").toString(),
     timeMax: (getCurrentDate() + "T18:30:00-05:00").toString(),
     singleEvents: true,
     orderBy: "startTime",
@@ -173,7 +197,7 @@ function listWeekEvents(auth, userSent, destUser) {
   const calendar = google.calendar({version: 'v3', auth});
   calendar.events.list({
     calendarId: 'primary',
-    timeMin: (getCurrentDate() + "T08:30:00-05:00").toString(),
+    timeMin: (getCurrentDate() + "T07:00:00-05:00").toString(),
     timeMax: (getDaysAwayDate(7) + "T18:30:00-05:00").toString(),
     
     singleEvents: true,
