@@ -37,6 +37,8 @@ function handleMessage(data) {
     console.log(data);
    if (/calendar\sday/.test(message)) {
     callApiFunction(user,listDayEvents);
+   } else if (/calendar\sweek/.test(message)){
+    callApiFunction(user,listWeekEvents);
    } else if (/calendar\shelp/.test(message)) {
         helpMessage(user);
    } else if (/calendar\sfive/.test(message)) {
@@ -136,8 +138,6 @@ var username = getNameFromId(user);
 }
 
 function listDayEvents(auth, user, message) {
-
-  //parse message for receiving user
   var username = getNameFromId(user);
   const calendar = google.calendar({version: 'v3', auth});
   calendar.events.list({
@@ -145,7 +145,7 @@ function listDayEvents(auth, user, message) {
     timeMin: (getCurrentDate() + "T08:30:00-05:00").toString(),
     timeMax: (getCurrentDate() + "T18:30:00-05:00").toString(),
     singleEvents: true,
-    orderBy: "starttime",
+    orderBy: "startTime",
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
     const events = res.data.items;
@@ -154,11 +154,37 @@ function listDayEvents(auth, user, message) {
   });  
 }
 
+function listWeekEvents(auth, user, message) {
+  var username = getNameFromId(user);
+  const calendar = google.calendar({version: 'v3', auth});
+  calendar.events.list({
+    calendarId: 'primary',
+    timeMin: (getCurrentDate() + "T08:30:00-05:00").toString(),
+    timeMax: (getDaysAwayDate(7) + "T18:30:00-05:00").toString(),
+    
+    singleEvents: true,
+    orderBy: "startTime",
+  }, (err, res) => {
+    if (err) return console.log('The API returned an error: ' + err);
+    const events = res.data.items;
+    let retString = eventsToString(events);
+    bot.postMessageToUser(username,retString);
+  });
+}
+
 function getCurrentDate(){
   let date = "";
   let day = new Date();
   date = day.getFullYear() + "-" + dateAppendZero(day.getMonth() + 1) + "-" + dateAppendZero(day.getDate());  
 
+  return date;
+}
+function getDaysAwayDate(days) {
+  let date = ""
+  let day = new Date();
+  day.setDate(day.getDate() + days);
+  date = day.getFullYear() + "-" + dateAppendZero(day.getMonth() + 1) + "-" + dateAppendZero(day.getDate());  
+  
   return date;
 }
 
@@ -187,14 +213,25 @@ function parseTimeOfEvent(date){
   return time;
 }
 
+function parseWeekdayOfEvent(index) {
+  let daysOfWeek = ["SUN", "MON", "TUES", "WED", "THURS", "FRI", "SAT"];
+  return daysOfWeek[index];
+}
+
 function eventsToString(events) {
     if (events.length) {
          let eventString = "";
+         let prevDayNum = -1;
          events.map((event, i) => {
          console.log(event);
            const start = event.start.dateTime || event.start.date;
            const end = event.end.dateTime || event.end.date;
-           eventString += `${parseTimeOfEvent(start)} - ${parseTimeOfEvent(end)}: ${event.summary}\n`;
+           const day = new Date(start);
+           if (day.getDay() !== prevDayNum) {
+            eventString += `${parseWeekdayOfEvent(day.getDay())}\n`;
+            prevDayNum = day.getDay();
+           }
+           eventString += `\t\t${parseTimeOfEvent(start)} - ${parseTimeOfEvent(end)}: ${event.summary}\n`;
          });
          
          return eventString;
