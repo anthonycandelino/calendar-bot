@@ -35,20 +35,28 @@ function handleMessage(data) {
     var message = data.text;
     var user = data.user;
     console.log(data);
-   if (/calendar\sday/.test(message)) {
-    callApiFunction(user,listDayEvents);
-   } else if (/calendar\sweek/.test(message)){
-    callApiFunction(user,listWeekEvents);
-   } else if (/calendar\shelp/.test(message)) {
+   if (/^calendar\sday$/.test(message)) {
+        callApiFunction(user, user, listDayEvents);
+   } else if(/^calendar\sday\s<@\w+>$/.test(message)) {
+        let dest = getUserFromMessage(message);
+        callApiFunction(user, dest, listDayEvents);
+   } else if (/^calendar\shelp$/.test(message)) {
         helpMessage(user);
-   } else if (/calendar\sfive/.test(message)) {
-       callApiFunction(user,listNextFiveEvents);
-   } else if (/URL:\s\w+/.test(message)) {
-       storeAuthentication(message.split(' ')[1], user);
-   } else {
-       var username = getNameFromId(user);
-       bot.postMessageToUser(username,"Invalid command, please use 'calendar help'");
+   } else if (/^calendar\sfive$/.test(message)) {
+        callApiFunction(user, user, listNextFiveEvents);
+   } else if (/^URL:\s\w+$/.test(message)) {
+        storeAuthentication(message.split(' ')[1], user);
+   } else if (/^calendar\s.+$/.test(message)) {
+        var username = getNameFromId(user);
+        bot.postMessageToUser(username,"Invalid command, please use 'calendar help'");
    }
+}
+
+function getUserFromMessage(message) {
+    var dest = (message.match(/<@.+>/g))[0];
+    dest = dest.substr(2, dest.length - 3);
+    console.log(dest);
+    return dest;
 }
 
 function helpMessage(user) {
@@ -81,23 +89,23 @@ function storeAuthentication(message, user) {
     });
 }
 
-function callApiFunction(user, callback) {
+function callApiFunction(userCalendar, directedUser, callback) {
     fs.readFile('credentials.json', (err, content) => {
       if (err) return console.log('Error loading client secret file:', err);
       // Authorize a client with credentials, then call the Google Drive API.
-      authorize(JSON.parse(content), callback, user);
+      authorize(JSON.parse(content), callback, userCalendar, directedUser);
     });
 }
 
-function authorize(credentials, callback, user) {
+function authorize(credentials, callback, userCalendar, directedUser) {
   const {client_secret, client_id, redirect_uris} = credentials.installed;
   const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
 
   // Check if we have previously stored a token.
-  fs.readFile('users/'+user+'.txt', (err, token) => {
-    if (err) return getAccessToken(oAuth2Client, callback, user);
+  fs.readFile('users/'+userCalendar+'.txt', (err, token) => {
+    if (err) return getAccessToken(oAuth2Client, callback, userCalendar);
     oAuth2Client.setCredentials(JSON.parse(token));
-    callback(oAuth2Client, user);
+    callback(oAuth2Client, directedUser);
   });
 }
 
@@ -121,7 +129,7 @@ function getNameFromId(user) {
 }
 
 function listNextFiveEvents(auth, user) {
-var username = getNameFromId(user);
+  var username = getNameFromId(user);
   const calendar = google.calendar({version: 'v3', auth});
   calendar.events.list({
     calendarId: 'primary',
@@ -137,7 +145,8 @@ var username = getNameFromId(user);
   });
 }
 
-function listDayEvents(auth, user, message) {
+function listDayEvents(auth, user) {
+  //parse message for receiving user
   var username = getNameFromId(user);
   const calendar = google.calendar({version: 'v3', auth});
   calendar.events.list({
@@ -233,7 +242,6 @@ function eventsToString(events) {
            }
            eventString += `\t\t${parseTimeOfEvent(start)} - ${parseTimeOfEvent(end)}: ${event.summary}\n`;
          });
-         
          return eventString;
        } else {
          return 'No upcoming events today.';
