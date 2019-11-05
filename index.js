@@ -1,5 +1,4 @@
 const SlackBot = require('slackbots');
-const axios = require('axios');
 
 var fs = require('fs');
 const readline = require('readline');
@@ -7,30 +6,34 @@ const {google} = require('googleapis');
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
 
+// Declares bot with token for slack group it is in
 const bot = new SlackBot({
     token: 'xoxb-759347243669-821664786679-vMYPENCAesn1EzDBSJp5QwZo',
     name: 'calendarbot'
 });
 
 // Start Handler
-
 bot.on('start', () => {
     const params = {
         icon_emoji: ':calendar:'
     };
 });
 
-//Error handling
+// Error handling
 bot.on('error', (err) => console.log(err));
 
-//Message handler
+// Triggers bot when message is sent to it to handle
 bot.on('message', (data) => {
    if (data.type !== 'message') {
        return;
    }
    handleMessage(data);
 });
-// Respond to data
+
+/**
+  * Handles message sent to calendar-bot
+  * @param {String} data
+  */
 function handleMessage(data) {
     var message = data.text;
     var user = data.user;
@@ -53,7 +56,7 @@ function handleMessage(data) {
         helpMessage(user);
    } else if (/^calendar\sfive$/.test(message)) {
         callApiFunction(user, user, listNextFiveEvents);
-   } else if (/^URL:\s\w+$/.test(message)) {
+   } else if (/^URL:\s.+$/.test(message)) {
         storeAuthentication(message.split(' ')[1], user);
    } else if (/^calendar\s.+$/.test(message)) {
         var username = getNameFromId(user);
@@ -61,13 +64,21 @@ function handleMessage(data) {
    }
 }
 
+/**
+  * From message, retrieves the user who message will be sent to
+  * @param {String} message
+  * @return {String}
+  */
 function getUserFromMessage(message) {
     var dest = (message.match(/<@.+>/g))[0];
     dest = dest.substr(2, dest.length - 3);
-    console.log(dest);
     return dest;
 }
 
+/**
+  * Lists help options when user wants help using calendar bot
+  * @param {String} user
+  */
 function helpMessage(user) {
     var username = getNameFromId(user);
     bot.postMessageToUser(username,"Welcome to the calendar bot! Here is a list of commands:\n"
@@ -79,6 +90,12 @@ function helpMessage(user) {
     + "6) URL: [authentication] - used when first setting up your google accounr to a calendar\n");
 }
 
+
+/**
+* Stores the users authentication code in a text file
+* @param {String} message
+* @param {String} user
+*/
 function storeAuthentication(message, user) {
     fs.readFile('credentials.json', (err, content) => {
       if (err) return console.log('Error loading client secret file:', err);
@@ -99,6 +116,12 @@ function storeAuthentication(message, user) {
     });
 }
 
+/**
+* Loads the app credentials and continues to attempt google api authorization
+* @param {String} userCalendar
+* @param {String} directedUser
+* @param {Function} callback
+*/
 function callApiFunction(userCalendar, directedUser, callback) {
     fs.readFile('credentials.json', (err, content) => {
       if (err) return console.log('Error loading client secret file:', err);
@@ -107,6 +130,13 @@ function callApiFunction(userCalendar, directedUser, callback) {
     });
 }
 
+/**
+* Attempts to authorize with google api and call then call the callback function
+* @param {Object} credentials
+* @param {String} userCalendar
+* @param {String} directedUser
+* @param {Function} callback
+*/
 function authorize(credentials, callback, userCalendar, directedUser) {
   const {client_secret, client_id, redirect_uris} = credentials.installed;
   const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
@@ -119,6 +149,12 @@ function authorize(credentials, callback, userCalendar, directedUser) {
   });
 }
 
+/**
+* Sends an authentication url to an unauthorized user
+* @param {Object} oAuth2Client
+* @param {Function} callback
+* @param {String} user
+*/
 function getAccessToken(oAuth2Client, callback, user) {
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: 'offline',
@@ -130,6 +166,11 @@ function getAccessToken(oAuth2Client, callback, user) {
   bot.postMessageToUser(username,'Visit the following URL and paste the verification here\n'+authUrl+'\nFormat it in the following way:\nURL: [DATA FROM AUTHENTICATION]');
 }
 
+/**
+ * Retrieves the generalized username for slackbotjs messaging from the given ID code
+ * @param {String} user
+ * @return {String}
+ */
 function getNameFromId(user) {
     for(var key in bot.getUsers()._value.members) {
       if (bot.getUsers()._value.members[key].id == user) {
@@ -138,6 +179,12 @@ function getNameFromId(user) {
     }
 }
 
+/**
+  * Lists next 5 calendar events as message sent to user in slack
+  * @param {String} auth
+  * @param {String} userSent
+  * @param {String} destUser
+  */
 function listNextFiveEvents(auth, userSent, destUser) {
   var destUsername = getNameFromId(destUser);
   const calendar = google.calendar({version: 'v3', auth});
@@ -155,8 +202,13 @@ function listNextFiveEvents(auth, userSent, destUser) {
   });
 }
 
+/**
+  * Lists morning events as message sent to user in slack
+  * @param {String} auth
+  * @param {String} userSent
+  * @param {String} destUser
+  */
 function listMorningEvents(auth, user, destUser) {
-  //parse message for receiving user
   var destUsername = getNameFromId(destUser);
   const calendar = google.calendar({version: 'v3', auth});
   calendar.events.list({
@@ -173,6 +225,12 @@ function listMorningEvents(auth, user, destUser) {
   });  
 }
 
+/**
+  * Lists daily events as message sent to user in slack
+  * @param {String} auth
+  * @param {String} userSent
+  * @param {String} destUser
+  */
 function listDayEvents(auth, userSent, destUser) {
   //parse message for receiving user
   var destUsername = getNameFromId(destUser);
@@ -191,6 +249,12 @@ function listDayEvents(auth, userSent, destUser) {
   });  
 }
 
+/**
+  * Lists weekly events as message sent to user in slack
+  * @param {String} auth
+  * @param {String} userSent
+  * @param {String} destUser
+  */
 function listWeekEvents(auth, userSent, destUser) {
   var destUsername = getNameFromId(destUser);
   const calendar = google.calendar({version: 'v3', auth});
@@ -198,7 +262,6 @@ function listWeekEvents(auth, userSent, destUser) {
     calendarId: 'primary',
     timeMin: (getCurrentDate() + "T07:00:00-05:00").toString(),
     timeMax: (getDaysAwayDate(7) + "T18:30:00-05:00").toString(),
-    
     singleEvents: true,
     orderBy: "startTime",
   }, (err, res) => {
@@ -209,22 +272,35 @@ function listWeekEvents(auth, userSent, destUser) {
   });
 }
 
+/**
+  * Gets current date using JS functions and returns it to user in string format
+  * @returns {String}
+  */
 function getCurrentDate(){
   let date = "";
   let day = new Date();
   date = day.getFullYear() + "-" + dateAppendZero(day.getMonth() + 1) + "-" + dateAppendZero(day.getDate());  
-
   return date;
 }
+
+/**
+  * Intakes day count and retrieves the calendar date for current+days away and returns it as a string
+  * @param {int} days
+  * @returns {String}
+  */
 function getDaysAwayDate(days) {
   let date = ""
   let day = new Date();
   day.setDate(day.getDate() + days);
   date = day.getFullYear() + "-" + dateAppendZero(day.getMonth() + 1) + "-" + dateAppendZero(day.getDate());  
-  
   return date;
 }
 
+/**
+  * Intakes number and checks if it needs a leading zero to meet format criteria
+  * @param {int} dateItem
+  * @returns {int}
+  */
 function dateAppendZero(dateItem) {
   if (dateItem.toString().length == 1) {
     dateItem = "0" + dateItem;
@@ -232,8 +308,12 @@ function dateAppendZero(dateItem) {
   return dateItem;
 }
 
+/**
+  * Intakes date in JS format as 24hr format and returns the date string in a 12 hour format with AM/PM
+  * @param {String} date
+  * @returns {Date}
+  */
 function parseTimeOfEvent(date){
-  
   let time = new Date(date);
   let hours = time.getHours();
   
@@ -250,16 +330,32 @@ function parseTimeOfEvent(date){
   return time;
 }
 
+/**
+  * Gets index of day of week and returns day as string accordingly
+  * @param {int} index
+  * @returns {String}
+  */
 function parseWeekdayOfEvent(index) {
   let daysOfWeek = ["SUN", "MON", "TUES", "WED", "THURS", "FRI", "SAT"];
   return daysOfWeek[index];
 }
 
+/**
+  * Gets index of month and returns month as string accordingly
+  * @param {int} index
+  * @returns {String}
+  */
 function parseMonthOfEvent(index) {
   let monthOfYear = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   return monthOfYear[index];
 }
 
+/**
+* Canverts an event object into a string
+* @param {Event} events
+* @param {String} userSent
+* @returns {String}
+*/
 function eventsToString(events, userSent) {
     if (events.length) {
          let eventString = "";
