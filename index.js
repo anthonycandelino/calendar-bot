@@ -34,7 +34,6 @@ bot.on('message', (data) => {
 function handleMessage(data) {
     var message = data.text;
     var user = data.user;
-    console.log(data);
    if (/^calendar\sday$/.test(message)) {
         callApiFunction(user, user, listDayEvents);
    } else if(/^calendar\sday\s<@\w+>$/.test(message)) {
@@ -73,7 +72,7 @@ function helpMessage(user) {
     var username = getNameFromId(user);
     bot.postMessageToUser(username,"Welcome to the calendar bot! Here is a list of commands:\n"
     + "1) calendar help - lists commands for the calendar bot (you're donig this right now!)\n"
-    + "2) calendar five - lists the first five events you have in your calendar\n"
+    + "2) calendar five - lists the next five events you have in your calendar\n"
     + "3) calendar morning @[user] - sends your morning calendar to the specified user or leave it blank to messsage yourself\n"
     + "4) calendar day @[user] - sends your days calendar to the specified user or leave it blank to message yourself\n"
     + "5) calendar week @[user] - sends your week calendar to the specified user or leave it blank to message yourself\n"
@@ -256,18 +255,22 @@ function parseWeekdayOfEvent(index) {
   return daysOfWeek[index];
 }
 
+function parseMonthOfEvent(index) {
+  let monthOfYear = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  return monthOfYear[index];
+}
+
 function eventsToString(events, userSent) {
     if (events.length) {
          let eventString = "";
          eventString += "<@"+userSent+"> has sent you part of their calendar:\n"
          let prevDayNum = -1;
          events.map((event, i) => {
-         console.log(event);
            const start = event.start.dateTime || event.start.date;
            const end = event.end.dateTime || event.end.date;
            const day = new Date(start);
            if (day.getDay() !== prevDayNum) {
-            eventString += `${parseWeekdayOfEvent(day.getDay())}\n`;
+            eventString += `${parseWeekdayOfEvent(day.getDay())} - ${parseMonthOfEvent(day.getMonth())} ${day.getDate()}\n`;
             prevDayNum = day.getDay();
            }
            eventString += `\t\t${parseTimeOfEvent(start)} - ${parseTimeOfEvent(end)}: ${event.summary}\n`;
