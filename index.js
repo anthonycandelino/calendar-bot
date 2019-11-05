@@ -28,23 +28,35 @@ bot.on('message', (data) => {
    if (data.type !== 'message') {
        return;
    }
-   handleMessage(data.text, data.user);
+   handleMessage(data);
 });
 // Respond to data
-function handleMessage(message, user) {
-   if (message.includes(' morning')) {
-      callApiFunction(user,listDayEvents); 
-      console.log("option 1");
-       bot.postMessageToChannel('calendar-bot-test', 'Morning!');
-   } else if (message.includes(' day')) {
-       bot.postMessageToChannel('calendar-bot-test', 'day!');
-       console.log("option 2");
-       bot.postMessageToChannel('calendar-bot-test', 'hey!');
-   } else if (message.includes(' five')) {
+function handleMessage(data) {
+    var message = data.text;
+    var user = data.user;
+    console.log(data);
+   if (/calendar\smorning\s@\w+/.test(message)) {
+   
+   } else if (/calendar\shelp/.test(message)) {
+        helpMessage(user);
+   } else if (/calendar\sfive/.test(message)) {
        callApiFunction(user,listNextFiveEvents);
-   } else if (message.includes('URL: ')) {
+   } else if (/URL:\s\w+/.test(message)) {
        storeAuthentication(message.split(' ')[1], user);
+   } else {
+       var username = getNameFromId(user);
+       bot.postMessageToUser(username,"Invalid command, please use 'calendar help'");
    }
+}
+
+function helpMessage(user) {
+    var username = getNameFromId(user);
+    bot.postMessageToUser(username,"Welcome to the calendar bot! Here is a list of commands:\n"
+    + "1) calendar help - lists commands for the calendar bot (you're donig this right now!)\n"
+    + "2) calendar five - lists the first five events you have in your calendar\n"
+    + "3) calendar day @[user] - sends your days calendar to the specified user or leave it blank to message yourself\n"
+    + "4) calendar week @[user] - sends your week calendar to the specified user or leave it blank to message yourself\n"
+    + "5) URL: [authentication] - used when first setting up your google accounr to a calendar\n");
 }
 
 function storeAuthentication(message, user) {
@@ -61,7 +73,7 @@ function storeAuthentication(message, user) {
         // Store the token to disk for later program executions
         fs.writeFile('users/'+user+'.txt', JSON.stringify(token), (err) => {
           if (err) return console.error(err);
-          console.log('Token stored to', 'users/'+user+'.txt');
+          bot.postMessageToUser(username,"Successfully set up google calendar authorization!\nYou can now process commands!");
         });
       });
     });
