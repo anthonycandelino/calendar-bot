@@ -40,6 +40,11 @@ function handleMessage(data) {
    } else if(/^calendar\sday\s<@\w+>$/.test(message)) {
         let dest = getUserFromMessage(message);
         callApiFunction(user, dest, listDayEvents);
+   } else if (/^calendar\sweek$/.test(message)) {
+        callApiFunction(user, user, listWeekEvents);
+   } else if(/^calendar\sweek\s<@\w+>$/.test(message)) {
+        let dest = getUserFromMessage(message);
+        callApiFunction(user, dest, listWeekEvents);
    } else if (/^calendar\shelp$/.test(message)) {
         helpMessage(user);
    } else if (/^calendar\sfive$/.test(message)) {
@@ -105,7 +110,7 @@ function authorize(credentials, callback, userCalendar, directedUser) {
   fs.readFile('users/'+userCalendar+'.txt', (err, token) => {
     if (err) return getAccessToken(oAuth2Client, callback, userCalendar);
     oAuth2Client.setCredentials(JSON.parse(token));
-    callback(oAuth2Client, directedUser);
+    callback(oAuth2Client, userCalendar, directedUser);
   });
 }
 
@@ -128,8 +133,8 @@ function getNameFromId(user) {
     }
 }
 
-function listNextFiveEvents(auth, user) {
-  var username = getNameFromId(user);
+function listNextFiveEvents(auth, userSent, destUser) {
+  var destUsername = getNameFromId(destUser);
   const calendar = google.calendar({version: 'v3', auth});
   calendar.events.list({
     calendarId: 'primary',
@@ -140,14 +145,14 @@ function listNextFiveEvents(auth, user) {
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
     const events = res.data.items;
-    let retString = eventsToString(events);
-    bot.postMessageToUser(username,retString);
+    let retString = eventsToString(events,userSent);
+    bot.postMessageToUser(destUsername,retString);
   });
 }
 
-function listDayEvents(auth, user) {
+function listDayEvents(auth, userSent, destUser) {
   //parse message for receiving user
-  var username = getNameFromId(user);
+  var destUsername = getNameFromId(destUser);
   const calendar = google.calendar({version: 'v3', auth});
   calendar.events.list({
     calendarId: 'primary',
@@ -158,13 +163,13 @@ function listDayEvents(auth, user) {
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
     const events = res.data.items;
-    let retString = eventsToString(events);
-    bot.postMessageToUser(username,retString);
+    let retString = eventsToString(events, userSent);
+    bot.postMessageToUser(destUsername,retString);
   });  
 }
 
-function listWeekEvents(auth, user, message) {
-  var username = getNameFromId(user);
+function listWeekEvents(auth, userSent, destUser) {
+  var destUsername = getNameFromId(destUser);
   const calendar = google.calendar({version: 'v3', auth});
   calendar.events.list({
     calendarId: 'primary',
@@ -176,8 +181,8 @@ function listWeekEvents(auth, user, message) {
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
     const events = res.data.items;
-    let retString = eventsToString(events);
-    bot.postMessageToUser(username,retString);
+    let retString = eventsToString(events, userSent);
+    bot.postMessageToUser(destUsername,retString);
   });
 }
 
@@ -227,9 +232,10 @@ function parseWeekdayOfEvent(index) {
   return daysOfWeek[index];
 }
 
-function eventsToString(events) {
+function eventsToString(events, userSent) {
     if (events.length) {
          let eventString = "";
+         eventString += "<@"+userSent+"> has sent you part of their calendar:\n"
          let prevDayNum = -1;
          events.map((event, i) => {
          console.log(event);
