@@ -56,7 +56,7 @@ function handleMessage(data) {
         helpMessage(user);
    } else if (/^calendar\sfive$/.test(message)) {
         callApiFunction(user, user, listNextFiveEvents);
-   } else if (/^URL:\s\w+$/.test(message)) {
+   } else if (/^URL:\s.+$/.test(message)) {
         storeAuthentication(message.split(' ')[1], user);
    } else if (/^calendar\s.+$/.test(message)) {
         var username = getNameFromId(user);
@@ -90,6 +90,12 @@ function helpMessage(user) {
     + "6) URL: [authentication] - used when first setting up your google accounr to a calendar\n");
 }
 
+
+/**
+* Stores the users authentication code in a text file
+* @param {String} message
+* @param {String} user
+*/
 function storeAuthentication(message, user) {
     fs.readFile('credentials.json', (err, content) => {
       if (err) return console.log('Error loading client secret file:', err);
@@ -110,6 +116,12 @@ function storeAuthentication(message, user) {
     });
 }
 
+/**
+* Loads the app credentials and continues to attempt google api authorization
+* @param {String} userCalendar
+* @param {String} directedUser
+* @param {Function} callback
+*/
 function callApiFunction(userCalendar, directedUser, callback) {
     fs.readFile('credentials.json', (err, content) => {
       if (err) return console.log('Error loading client secret file:', err);
@@ -118,6 +130,13 @@ function callApiFunction(userCalendar, directedUser, callback) {
     });
 }
 
+/**
+* Attempts to authorize with google api and call then call the callback function
+* @param {Object} credentials
+* @param {String} userCalendar
+* @param {String} directedUser
+* @param {Function} callback
+*/
 function authorize(credentials, callback, userCalendar, directedUser) {
   const {client_secret, client_id, redirect_uris} = credentials.installed;
   const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
@@ -130,6 +149,12 @@ function authorize(credentials, callback, userCalendar, directedUser) {
   });
 }
 
+/**
+* Sends an authentication url to an unauthorized user
+* @param {Object} oAuth2Client
+* @param {Function} callback
+* @param {String} user
+*/
 function getAccessToken(oAuth2Client, callback, user) {
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: 'offline',
@@ -141,6 +166,11 @@ function getAccessToken(oAuth2Client, callback, user) {
   bot.postMessageToUser(username,'Visit the following URL and paste the verification here\n'+authUrl+'\nFormat it in the following way:\nURL: [DATA FROM AUTHENTICATION]');
 }
 
+/**
+ * Retrieves the generalized username for slackbotjs messaging from the given ID code
+ * @param {String} user
+ * @return {String}
+ */
 function getNameFromId(user) {
     for(var key in bot.getUsers()._value.members) {
       if (bot.getUsers()._value.members[key].id == user) {
@@ -320,6 +350,12 @@ function parseMonthOfEvent(index) {
   return monthOfYear[index];
 }
 
+/**
+* Canverts an event object into a string
+* @param {Event} events
+* @param {String} userSent
+* @returns {String}
+*/
 function eventsToString(events, userSent) {
     if (events.length) {
          let eventString = "";
