@@ -141,3 +141,68 @@ var username = getNameFromId(user);
     }
   });
 }
+
+function listDayEvents(auth, user, message) {
+
+  //parse message for receiving user
+  var username = getNameFromId(user);
+  const calendar = google.calendar({version: 'v3', auth});
+  calendar.events.list({
+    calendarId: 'primary',
+    timeMin: (getCurrentDate() + "T08:30:00-05:00").toString(),
+    timeMax: (getCurrentDate() + "T18:30:00-05:00").toString(),
+    maxResults: 5,
+    singleEvents: true,
+    orderBy: "starttime",
+  }, (err, res) => {
+    if (err) return console.log('The API returned an error: ' + err);
+    const events = res.data.items;
+    if (events.length) {
+      let eventString = "";
+      events.map((event, i) => {
+      console.log(event);
+        const start = event.start.dateTime || event.start.date;
+        const end = event.end.dateTime || event.end.date;
+        eventString += `${parseTimeOfEvent(start)} - ${parseTimeOfEvent(end)}: ${event.summary}\n`;
+      });
+      
+      bot.postMessageToUser(username,eventString);
+    } else {
+      bot.postMessageToUser(username,'No upcoming events today.');
+    }
+  });  
+}
+
+function getCurrentDate(){
+  let date = "";
+  let day = new Date();
+  date = day.getFullYear() + "-" + dateAppendZero(day.getMonth() + 1) + "-" + dateAppendZero(day.getDate());  
+
+  return date;
+}
+
+function dateAppendZero(dateItem) {
+  if (dateItem.toString().length == 1) {
+    dateItem = "0" + dateItem;
+  }
+  return dateItem;
+}
+
+function parseTimeOfEvent(date){
+  
+  let time = new Date(date);
+  let hours = time.getHours();
+  
+  let amPm = "";
+  if (hours >= 12) {
+    amPm = " PM";
+  } else {
+    amPm = " AM"
+  }
+  hours = (hours % 12) || 12;
+
+  let mins = time.getMinutes();
+  time = dateAppendZero(hours).toString() + ":" + dateAppendZero(mins).toString() + amPm;
+  return time;
+}
+
