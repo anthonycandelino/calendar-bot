@@ -35,8 +35,8 @@ function handleMessage(data) {
     var message = data.text;
     var user = data.user;
     console.log(data);
-   if (/calendar\smorning\s@\w+/.test(message)) {
-   
+   if (/calendar\sday/.test(message)) {
+    callApiFunction(user,listDayEvents);
    } else if (/calendar\shelp/.test(message)) {
         helpMessage(user);
    } else if (/calendar\sfive/.test(message)) {
@@ -130,15 +130,8 @@ var username = getNameFromId(user);
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
     const events = res.data.items;
-    if (events.length) {
-      events.map((event, i) => {
-      console.log(event);
-        const start = event.start.dateTime || event.start.date;
-        bot.postMessageToUser(username,`${start} - ${event.summary}`);
-      });
-    } else {
-      bot.postMessageToUser(username,'No upcoming events found.');
-    }
+    let retString = eventsToString(events);
+    bot.postMessageToUser(username,retString);
   });
 }
 
@@ -151,25 +144,13 @@ function listDayEvents(auth, user, message) {
     calendarId: 'primary',
     timeMin: (getCurrentDate() + "T08:30:00-05:00").toString(),
     timeMax: (getCurrentDate() + "T18:30:00-05:00").toString(),
-    maxResults: 5,
     singleEvents: true,
     orderBy: "starttime",
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
     const events = res.data.items;
-    if (events.length) {
-      let eventString = "";
-      events.map((event, i) => {
-      console.log(event);
-        const start = event.start.dateTime || event.start.date;
-        const end = event.end.dateTime || event.end.date;
-        eventString += `${parseTimeOfEvent(start)} - ${parseTimeOfEvent(end)}: ${event.summary}\n`;
-      });
-      
-      bot.postMessageToUser(username,eventString);
-    } else {
-      bot.postMessageToUser(username,'No upcoming events today.');
-    }
+    let retString = eventsToString(events);
+    bot.postMessageToUser(username,retString);
   });  
 }
 
@@ -206,3 +187,18 @@ function parseTimeOfEvent(date){
   return time;
 }
 
+function eventsToString(events) {
+    if (events.length) {
+         let eventString = "";
+         events.map((event, i) => {
+         console.log(event);
+           const start = event.start.dateTime || event.start.date;
+           const end = event.end.dateTime || event.end.date;
+           eventString += `${parseTimeOfEvent(start)} - ${parseTimeOfEvent(end)}: ${event.summary}\n`;
+         });
+         
+         return eventString;
+       } else {
+         return 'No upcoming events today.';
+       }
+}
