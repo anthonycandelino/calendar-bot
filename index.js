@@ -156,9 +156,9 @@ function listNextFiveEvents(auth, userSent, destUser) {
   });
 }
 
-function listMorningEvents(auth, user) {
+function listMorningEvents(auth, user, destUser) {
   //parse message for receiving user
-  var username = getNameFromId(user);
+  var destUsername = getNameFromId(destUser);
   const calendar = google.calendar({version: 'v3', auth});
   calendar.events.list({
     calendarId: 'primary',
@@ -169,8 +169,8 @@ function listMorningEvents(auth, user) {
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
     const events = res.data.items;
-    let retString = eventsToString(events);
-    bot.postMessageToUser(username,retString);
+    let retString = eventsToString(events, user);
+    bot.postMessageToUser(destUsername,retString);
   });  
 }
 
