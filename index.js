@@ -376,3 +376,5 @@ function eventsToString(events, userSent) {
          return 'No upcoming events today.';
        }
 }
+
+module.exports = {getUserFromMessage, getCurrentDate, getDaysAwayDate, dateAppendZero, parseTimeOfEvent, parseWeekdayOfEvent, parseMonthOfEvent};
