@@ -87,7 +87,8 @@ function helpMessage(user) {
     '3) calendar morning @[user] - sends your morning calendar to the specified user or leave it blank to messsage yourself\n' +
     '4) calendar day @[user] - sends your days calendar to the specified user or leave it blank to message yourself\n' +
     '5) calendar week @[user] - sends your week calendar to the specified user or leave it blank to message yourself\n' +
-    '6) URL: [authentication] - used when first setting up your google accounr to a calendar\n');
+    '6) calendar free @[user] - sends your free time for today to the specified user or leave it blank to message yourself\n' +
+    '7) URL: [authentication] - used when first setting up your google accounr to a calendar\n');
 }
 
 
@@ -197,7 +198,8 @@ function listNextFiveEvents(auth, userSent, destUser) {
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
     const events = res.data.items;
-    const retString = eventsToString(events, userSent);
+    let retString = eventRecipientToString(userSent, destUser, 'five');
+    retString += eventsToString(events, userSent);
     bot.postMessageToUser(destUsername, retString);
   });
 }
@@ -205,10 +207,10 @@ function listNextFiveEvents(auth, userSent, destUser) {
 /**
   * Lists morning events as message sent to user in slack
   * @param {String} auth
-  * @param {String} user
+  * @param {String} userSent
   * @param {String} destUser
   */
-function listMorningEvents(auth, user, destUser) {
+function listMorningEvents(auth, userSent, destUser) {
   const destUsername = getNameFromId(destUser);
   const calendar = google.calendar({version: 'v3', auth});
   calendar.events.list({
@@ -220,7 +222,8 @@ function listMorningEvents(auth, user, destUser) {
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
     const events = res.data.items;
-    const retString = eventsToString(events, user);
+    let retString = eventRecipientToString(userSent, destUser, 'morning');
+    retString += eventsToString(events, userSent);
     bot.postMessageToUser(destUsername, retString);
   });
 }
@@ -244,7 +247,8 @@ function listDayEvents(auth, userSent, destUser) {
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
     const events = res.data.items;
-    const retString = eventsToString(events, userSent);
+    let retString = eventRecipientToString(userSent, destUser, 'today');
+    retString += eventsToString(events, userSent);
     bot.postMessageToUser(destUsername, retString);
   });
 }
@@ -267,7 +271,8 @@ function listWeekEvents(auth, userSent, destUser) {
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
     const events = res.data.items;
-    const retString = eventsToString(events, userSent);
+    let retString = eventRecipientToString(userSent, destUser, 'week');
+    retString += eventsToString(events, userSent);
     bot.postMessageToUser(destUsername, retString);
   });
 }
@@ -291,7 +296,8 @@ function listFreeTime(auth, userSent, destUser) {
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
     const events = res.data.items;
-    const retString = freeTimeToString(events, userSent);
+    let retString = eventRecipientToString(userSent, destUser, 'free');
+    retString += freeTimeToString(events, userSent);
     bot.postMessageToUser(destUsername, retString);
   });
 }
@@ -382,8 +388,7 @@ function parseMonthOfEvent(index) {
 */
 function eventsToString(events, userSent) {
   if (events.length) {
-    let eventString = '';
-    eventString += '<@'+userSent+'> has sent you part of their calendar:\n';
+    let eventString = '';    
     let prevDayNum = -1;
     events.map((event, i) => {
       const start = event.start.dateTime || event.start.date;
@@ -409,8 +414,7 @@ function eventsToString(events, userSent) {
 */
 function freeTimeToString(events, userSent) {
   if (events.length) {
-    let eventString = '';
-    eventString += '<@'+userSent+'> has sent you their free time for today:\n';
+    let eventString = '';    
     let prevDayNum = -1;
     events.map((event, i) => {
       if (i === 0) {
@@ -433,6 +437,37 @@ function freeTimeToString(events, userSent) {
   } else {
     return 'Free all day!';
   }
+}
+
+/**
+ * Creates prepended string for event message
+ * @param {String} userSent 
+ * @param {String} destUser 
+ * @param {String} eventType 
+ */
+function eventRecipientToString(userSent, destUser, eventType = null) {
+  let userString = '';
+  if (userSent === destUser) {
+    userString = 'Your ';        
+  } else {
+    userString = '<@'+userSent+'>\'s ' ;
+  }
+
+  if (eventType === 'free') {
+    userString += 'free time for today:\n';
+  } else if (eventType === 'today') {
+    userString += 'calendar for today:\n';
+  } else if (eventType === 'week') {
+    userString += 'calendar for the week:\n';
+  } else if (eventType === 'five') {
+    userString += 'next five events:\n';
+  } else if (eventType === 'morning') {
+    userString += 'calendar for this morning:\n';
+  } else {
+    userString += 'calendar:\n';
+  }
+
+  return userString;
 }
 
 module.exports = {getUserFromMessage, getCurrentDate, getDaysAwayDate, dateAppendZero, parseTimeOfEvent, parseWeekdayOfEvent, parseMonthOfEvent};
