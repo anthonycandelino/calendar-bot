@@ -51,6 +51,11 @@ function handleMessage(data) {
     helpMessage(user);
   } else if (/^calendar\sfive$/.test(message)) {
     callApiFunction(user, user, listNextFiveEvents);
+  }  else if (/^calendar\sfree$/.test(message)) {
+    callApiFunction(user, user, listFreeTime);
+  } else if (/^calendar\sfree\s<@\w+>$/.test(message)) {
+    const dest = getUserFromMessage(message);
+    callApiFunction(user, dest, listFreeTime);
   } else if (/^URL:\s.+$/.test(message)) {
     storeAuthentication(message.split(' ')[1], user);
   } else if (/^calendar\s.+$/.test(message)) {
@@ -268,6 +273,30 @@ function listWeekEvents(auth, userSent, destUser) {
 }
 
 /**
+  * Lists free time during current day to user in channel
+  * @param {String} auth
+  * @param {String} userSent
+  * @param {String} destUser
+  */
+function listFreeTime(auth, userSent, destUser) {
+  // parse message for receiving user
+  const destUsername = getNameFromId(destUser);
+  const calendar = google.calendar({version: 'v3', auth});
+  calendar.events.list({
+    calendarId: 'primary',
+    timeMin: (getCurrentDate() + 'T07:00:00-05:00').toString(),
+    timeMax: (getCurrentDate() + 'T18:30:00-05:00').toString(),
+    singleEvents: true,
+    orderBy: 'startTime',
+  }, (err, res) => {
+    if (err) return console.log('The API returned an error: ' + err);
+    const events = res.data.items;
+    const retString = freeTimeToString(events, userSent);
+    bot.postMessageToUser(destUsername, retString);
+  });
+}
+
+/**
   * Gets current date using JS functions and returns it to user in string format
   * @return {String}
   */
@@ -369,6 +398,40 @@ function eventsToString(events, userSent) {
     return eventString;
   } else {
     return 'No upcoming events today.';
+  }
+}
+
+/**
+* Finds time between events in work day
+* @param {Event} events
+* @param {String} userSent
+* @return {String}
+*/
+function freeTimeToString(events, userSent) {
+  if (events.length) {
+    let eventString = '';
+    eventString += '<@'+userSent+'> has sent you their free time for today:\n';
+    let prevDayNum = -1;
+    events.map((event, i) => {
+      if (i === 0) {
+        const start = event.start.dateTime || event.start.date;
+        const end = event.end.dateTime || event.end.date;
+        const day = new Date(start);
+        if (day.getDay() !== prevDayNum) {
+          eventString += `${parseWeekdayOfEvent(day.getDay())} - ${parseMonthOfEvent(day.getMonth())} ${day.getDate()}\n`;
+          prevDayNum = day.getDay();
+        }
+        eventString += `\t\t08:00 AM - ${parseTimeOfEvent(start)} \n\t\t${parseTimeOfEvent(end)} - `;
+      } else {
+        const start = event.start.dateTime || event.start.date;
+        const end = event.end.dateTime || event.end.date;
+        eventString += `${parseTimeOfEvent(start)} \n\t\t${parseTimeOfEvent(end)} - `;
+      }
+    });
+    eventString += '04:30 PM'
+    return eventString;
+  } else {
+    return 'Free all day!';
   }
 }
 
