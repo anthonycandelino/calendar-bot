@@ -60,6 +60,7 @@ function handleMessage(data) {
     storeAuthentication(message.split(' ')[1], user);
     } else if (/^calendar\sbook\s<@\w+>\s<@\w+>$/.test(message)) {
         let res = message.split("@");
+        //Retrieve users from the message
         let user1 = res[1].substring(0,res[1].indexOf('>'));
         let user2 = res[2].substring(0,res[1].indexOf('>'));
         bookTime(user1,user2);
@@ -283,6 +284,11 @@ function listWeekEvents(auth, userSent, destUser) {
   });
 }
 
+/**
+* Checks for time between two users
+* @param {String} userOne
+* @param {String} userTwo
+*/
 function bookTime(userOne, userTwo) {
     fs.readFile('credentials.json', (err, content) => {
         if (err) return console.log('Error loading client secret file:', err);
