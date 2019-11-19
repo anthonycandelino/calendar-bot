@@ -471,15 +471,4 @@ function eventRecipientToString(userSent, destUser, eventType = null) {
   return userString;
 }
 
-module.exports = {
-  getUserFromMessage, 
-  getCurrentDate, 
-  getDaysAwayDate, 
-  dateAppendZero, 
-  parseTimeOfEvent, 
-  parseWeekdayOfEvent, 
-  parseMonthOfEvent, 
-  eventsToString, 
-  freeTimeToString, 
-  eventRecipientToString
-};
+module.exports = {getUserFromMessage, getCurrentDate, getDaysAwayDate, dateAppendZero, parseTimeOfEvent, parseWeekdayOfEvent, parseMonthOfEvent, eventsToString, freeTimeToString, eventRecipientToString};
