@@ -58,10 +58,15 @@ function handleMessage(data) {
     callApiFunction(user, dest, listFreeTime);
   } else if (/^URL:\s.+$/.test(message)) {
     storeAuthentication(message.split(' ')[1], user);
+    } else if (/^calendar\sbook\s<@\w+>\s<@\w+>$/.test(message)) {
+        let res = message.split("@");
+        let user1 = res[1].substring(0,res[1].indexOf('>'));
+        let user2 = res[2].substring(0,res[1].indexOf('>'));
+        bookTime(user1,user2);
   } else if (/^calendar\s.+$/.test(message)) {
     const username = getNameFromId(user);
     bot.postMessageToUser(username, 'Invalid command, please use \'calendar help\'');
-  }
+    }
 }
 
 /**
@@ -88,7 +93,8 @@ function helpMessage(user) {
     '4) calendar day @[user] - sends your days calendar to the specified user or leave it blank to message yourself\n' +
     '5) calendar week @[user] - sends your week calendar to the specified user or leave it blank to message yourself\n' +
     '6) calendar free @[user] - sends your free time for today to the specified user or leave it blank to message yourself\n' +
-    '7) URL: [authentication] - used when first setting up your google accounr to a calendar\n');
+    '7) calendar book @[user] @[user] - shows free time between two users\n' +
+    '8) URL: [authentication] - used when first setting up your google accounr to a calendar\n');
 }
 
 
@@ -275,6 +281,24 @@ function listWeekEvents(auth, userSent, destUser) {
     retString += eventsToString(events, userSent);
     bot.postMessageToUser(destUsername, retString);
   });
+}
+
+function bookTime(userOne, userTwo) {
+    fs.readFile('credentials.json', (err, content) => {
+        if (err) return console.log('Error loading client secret file:', err);
+        // Authorize a client with credentials, then call the Google Drive API.
+        const {client_secret, client_id, redirect_uris} = (JSON.parse(content)).installed;
+        const oAuth2ClientOne = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+        const oAuth2ClientTwo = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+        fs.readFile('users/'+userOne+'.txt', (err, token) => {
+          if (err) return;
+          oAuth2ClientOne.setCredentials(JSON.parse(token));
+        });
+        fs.readFile('users/'+userTwo+'.txt', (err, token) => {
+          if (err) return;
+          oAuth2ClientTwo.setCredentials(JSON.parse(token));
+        });
+    });
 }
 
 /**
