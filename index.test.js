@@ -126,6 +126,30 @@ test('Get week events when weekdays carry over into a different month', () => {
   expect(index.eventsToString(weekIntoNewMonthEvents)).toBe('THURS - October 31\n\t\t09:30 AM - 10:30 AM: End of month event\nFRI - November 1\n\t\t01:45 PM - 02:00 PM: Start of month event\n');
 });
 
+test('Get personal free time with no events for the day', () => {
+  expect(index.eventRecipientToString('self','self','free') + index.freeTimeToString(emptyEventList)).toBe('Your free time for today:\n\t\tYou\'re free all day!');
+});
+
+test('Get personal free time with 1 event for the day', () => {
+  expect(index.eventRecipientToString('self','self','free') + index.freeTimeToString(preNoonPostNoonEvent)).toBe('Your free time for today:\nTUES - November 19\n\t\t08:00 AM - 11:59 AM\n\t\t12:01 PM - 04:30 PM');
+});
+
+test('Get personal free time with multiple events for the day', () => {
+  expect(index.eventRecipientToString('self','self','free') + index.freeTimeToString(dayEvents)).toBe('Your free time for today:\nTUES - November 19\n\t\t08:00 AM - 08:30 AM\n\t\t09:30 AM - 12:45 PM\n\t\t01:00 PM - 04:30 PM');
+});
+
+test('Get team member\'s free time with no events for the day', () => {
+  expect(index.eventRecipientToString('Joe','self','free') + index.freeTimeToString(emptyEventList)).toBe('<@Joe>\'s free time for today:\n\t\tYou\'re free all day!');
+});
+
+test('Get team member\'s free time with 1 event for the day', () => {
+  expect(index.eventRecipientToString('Joe','self','free') + index.freeTimeToString(preNoonPostNoonEvent)).toBe('<@Joe>\'s free time for today:\nTUES - November 19\n\t\t08:00 AM - 11:59 AM\n\t\t12:01 PM - 04:30 PM');
+});
+
+test('Get team member\'s free time with multiple events for the day', () => {
+  expect(index.eventRecipientToString('Joe','self','free') + index.freeTimeToString(dayEvents)).toBe('<@Joe>\'s free time for today:\nTUES - November 19\n\t\t08:00 AM - 08:30 AM\n\t\t09:30 AM - 12:45 PM\n\t\t01:00 PM - 04:30 PM');
+});
+
 test('Get username from message', () => {
   expect(index.getUserFromMessage('calendar week <@username>')).toBe('username');
 });
