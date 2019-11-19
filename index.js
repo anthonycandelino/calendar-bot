@@ -431,8 +431,7 @@ function eventsToString(events) {
     });
     return eventString;
   } else {
-    eventString = 'No upcoming events.';
-    console.log(eventString);
+    eventString = 'No upcoming events.';    
     return eventString;
   }
 }
