@@ -383,10 +383,9 @@ function parseMonthOfEvent(index) {
 /**
 * Canverts an event object into a string
 * @param {Event} events
-* @param {String} userSent
 * @return {String}
 */
-function eventsToString(events, userSent) {
+function eventsToString(events) {
   if (events.length) {
     let eventString = '';    
     let prevDayNum = -1;
@@ -402,17 +401,18 @@ function eventsToString(events, userSent) {
     });
     return eventString;
   } else {
-    return 'No upcoming events today.';
+    eventString = 'No upcoming events.';
+    console.log(eventString);
+    return eventString;
   }
 }
 
 /**
 * Finds time between events in work day
 * @param {Event} events
-* @param {String} userSent
 * @return {String}
 */
-function freeTimeToString(events, userSent) {
+function freeTimeToString(events) {
   if (events.length) {
     let eventString = '';    
     let prevDayNum = -1;
@@ -425,17 +425,17 @@ function freeTimeToString(events, userSent) {
           eventString += `${parseWeekdayOfEvent(day.getDay())} - ${parseMonthOfEvent(day.getMonth())} ${day.getDate()}\n`;
           prevDayNum = day.getDay();
         }
-        eventString += `\t\t08:00 AM - ${parseTimeOfEvent(start)} \n\t\t${parseTimeOfEvent(end)} - `;
+        eventString += `\t\t08:00 AM - ${parseTimeOfEvent(start)}\n\t\t${parseTimeOfEvent(end)} - `;
       } else {
         const start = event.start.dateTime || event.start.date;
         const end = event.end.dateTime || event.end.date;
-        eventString += `${parseTimeOfEvent(start)} \n\t\t${parseTimeOfEvent(end)} - `;
+        eventString += `${parseTimeOfEvent(start)}\n\t\t${parseTimeOfEvent(end)} - `;
       }
     });
     eventString += '04:30 PM'
     return eventString;
   } else {
-    return 'Free all day!';
+    return '\t\tYou\'re free all day!';
   }
 }
 
@@ -471,4 +471,4 @@ function eventRecipientToString(userSent, destUser, eventType = null) {
   return userString;
 }
 
-module.exports = {getUserFromMessage, getCurrentDate, getDaysAwayDate, dateAppendZero, parseTimeOfEvent, parseWeekdayOfEvent, parseMonthOfEvent};
+module.exports = {getUserFromMessage, getCurrentDate, getDaysAwayDate, dateAppendZero, parseTimeOfEvent, parseWeekdayOfEvent, parseMonthOfEvent, eventsToString, freeTimeToString, eventRecipientToString};
