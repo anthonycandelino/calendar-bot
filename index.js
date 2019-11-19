@@ -444,6 +444,7 @@ function freeTimeToString(events, userSent) {
  * @param {String} userSent 
  * @param {String} destUser 
  * @param {String} eventType 
+ * @return {String}
  */
 function eventRecipientToString(userSent, destUser, eventType = null) {
   let userString = '';
