@@ -51,6 +51,11 @@ function handleMessage(data) {
     helpMessage(user);
   } else if (/^calendar\sfive$/.test(message)) {
     callApiFunction(user, user, listNextFiveEvents);
+  }  else if (/^calendar\sfree$/.test(message)) {
+    callApiFunction(user, user, listFreeTime);
+  } else if (/^calendar\sfree\s<@\w+>$/.test(message)) {
+    const dest = getUserFromMessage(message);
+    callApiFunction(user, dest, listFreeTime);
   } else if (/^URL:\s.+$/.test(message)) {
     storeAuthentication(message.split(' ')[1], user);
   } else if (/^calendar\s.+$/.test(message)) {
@@ -257,6 +262,30 @@ function listWeekEvents(auth, userSent, destUser) {
     calendarId: 'primary',
     timeMin: (getCurrentDate() + 'T07:00:00-05:00').toString(),
     timeMax: (getDaysAwayDate(7) + 'T18:30:00-05:00').toString(),
+    singleEvents: true,
+    orderBy: 'startTime',
+  }, (err, res) => {
+    if (err) return console.log('The API returned an error: ' + err);
+    const events = res.data.items;
+    const retString = eventsToString(events, userSent);
+    bot.postMessageToUser(destUsername, retString);
+  });
+}
+
+/**
+  * Lists free time during current day to user in channel
+  * @param {String} auth
+  * @param {String} userSent
+  * @param {String} destUser
+  */
+function listFreeTime(auth, userSent, destUser) {
+  // parse message for receiving user
+  const destUsername = getNameFromId(destUser);
+  const calendar = google.calendar({version: 'v3', auth});
+  calendar.events.list({
+    calendarId: 'primary',
+    timeMin: (getCurrentDate() + 'T07:00:00-05:00').toString(),
+    timeMax: (getCurrentDate() + 'T18:30:00-05:00').toString(),
     singleEvents: true,
     orderBy: 'startTime',
   }, (err, res) => {
