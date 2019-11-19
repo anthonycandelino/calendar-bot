@@ -291,7 +291,7 @@ function listFreeTime(auth, userSent, destUser) {
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
     const events = res.data.items;
-    const retString = eventsToString(events, userSent);
+    const retString = freeTimeToString(events, userSent);
     bot.postMessageToUser(destUsername, retString);
   });
 }
@@ -398,6 +398,40 @@ function eventsToString(events, userSent) {
     return eventString;
   } else {
     return 'No upcoming events today.';
+  }
+}
+
+/**
+* Finds time between events in work day
+* @param {Event} events
+* @param {String} userSent
+* @return {String}
+*/
+function freeTimeToString(events, userSent) {
+  if (events.length) {
+    let eventString = '';
+    eventString += '<@'+userSent+'> has sent you their free time for today:\n';
+    let prevDayNum = -1;
+    events.map((event, i) => {
+      if (i === 0) {
+        const start = event.start.dateTime || event.start.date;
+        const end = event.end.dateTime || event.end.date;
+        const day = new Date(start);
+        if (day.getDay() !== prevDayNum) {
+          eventString += `${parseWeekdayOfEvent(day.getDay())} - ${parseMonthOfEvent(day.getMonth())} ${day.getDate()}\n`;
+          prevDayNum = day.getDay();
+        }
+        eventString += `\t\t08:00 AM - ${parseTimeOfEvent(start)} \n\t\t${parseTimeOfEvent(end)} - `;
+      } else {
+        const start = event.start.dateTime || event.start.date;
+        const end = event.end.dateTime || event.end.date;
+        eventString += `${parseTimeOfEvent(start)} \n\t\t${parseTimeOfEvent(end)} - `;
+      }
+    });
+    eventString += '04:30 PM'
+    return eventString;
+  } else {
+    return 'Free all day!';
   }
 }
 
