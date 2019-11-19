@@ -79,75 +79,111 @@ test('Get full day event converted in string format', () => {
 });
 
 test('Get personal morning events when there are multiple morning events', () => {
-  expect(index.eventRecipientToString('self','self','morning') + index.eventsToString(morningEvents)).toBe('Your calendar for this morning:\nTUES - November 19\n\t\t08:30 AM - 09:30 AM: Morning Stand up\n\t\t09:45 AM - 10:00 AM: Coffee Run\n');
+  expect(index.eventRecipientToString('self','self','morning') + index.eventsToString(morningEvents)).toBe(
+    'Your calendar for this morning:\nTUES - November 19\n\t\t08:30 AM - 09:30 AM: Morning Stand up\n\t\t09:45 AM - 10:00 AM: Coffee Run\n'
+  );
 });
 
 test('Get morning event when it stars before noon and ends after noon', () => {
-  expect(index.eventRecipientToString('self','self','morning') + index.eventsToString(preNoonPostNoonEvent)).toBe('Your calendar for this morning:\nTUES - November 19\n\t\t11:59 AM - 12:01 PM: 1 Bite Lunch Time\n');
+  expect(index.eventRecipientToString('self','self','morning') + index.eventsToString(preNoonPostNoonEvent)).toBe(
+    'Your calendar for this morning:\nTUES - November 19\n\t\t11:59 AM - 12:01 PM: 1 Bite Lunch Time\n'
+  );
 });
 
 test('Get different team member\'s morning events', () => {
-  expect(index.eventRecipientToString('Joe','self','morning') + index.eventsToString(morningEvents)).toBe('<@Joe>\'s calendar for this morning:\nTUES - November 19\n\t\t08:30 AM - 09:30 AM: Morning Stand up\n\t\t09:45 AM - 10:00 AM: Coffee Run\n');
+  expect(index.eventRecipientToString('Joe','self','morning') + index.eventsToString(morningEvents)).toBe(
+    '<@Joe>\'s calendar for this morning:\nTUES - November 19\n\t\t08:30 AM - 09:30 AM: Morning Stand up\n\t\t09:45 AM - 10:00 AM: Coffee Run\n'
+  );
 });
 
 test('Get personal day events when there are multiple events', () => {
-  expect(index.eventRecipientToString('self','self','today') + index.eventsToString(dayEvents)).toBe('Your calendar for today:\nTUES - November 19\n\t\t08:30 AM - 09:30 AM: Morning Stand up\n\t\t12:45 PM - 01:00 PM: Afternoon hang\n');
+  expect(index.eventRecipientToString('self','self','today') + index.eventsToString(dayEvents)).toBe(
+    'Your calendar for today:\nTUES - November 19\n\t\t08:30 AM - 09:30 AM: Morning Stand up\n\t\t12:45 PM - 01:00 PM: Afternoon hang\n'
+  );
 });
 
 test('Get personal day with 1 event', () => {
-  expect(index.eventRecipientToString('self','self','today') + index.eventsToString(fullDayEvent)).toBe('Your calendar for today:\nTUES - November 19\n\t\t08:30 AM - 04:30 PM: Full Day Event\n');
+  expect(index.eventRecipientToString('self','self','today') + index.eventsToString(fullDayEvent)).toBe(
+    'Your calendar for today:\nTUES - November 19\n\t\t08:30 AM - 04:30 PM: Full Day Event\n'
+  );
 });
 
 test('Get team member\'s day events when there are multiple events', () => {
-  expect(index.eventRecipientToString('Joe','self','today') + index.eventsToString(dayEvents)).toBe('<@Joe>\'s calendar for today:\nTUES - November 19\n\t\t08:30 AM - 09:30 AM: Morning Stand up\n\t\t12:45 PM - 01:00 PM: Afternoon hang\n');
+  expect(index.eventRecipientToString('Joe','self','today') + index.eventsToString(dayEvents)).toBe(
+    '<@Joe>\'s calendar for today:\nTUES - November 19\n\t\t08:30 AM - 09:30 AM: Morning Stand up\n\t\t12:45 PM - 01:00 PM: Afternoon hang\n'
+  );
 });
 
 test('Get team member\'s day with 1 event', () => {
-  expect(index.eventRecipientToString('Joe','self','today') + index.eventsToString(fullDayEvent)).toBe('<@Joe>\'s calendar for today:\nTUES - November 19\n\t\t08:30 AM - 04:30 PM: Full Day Event\n');
+  expect(index.eventRecipientToString('Joe','self','today') + index.eventsToString(fullDayEvent)).toBe(
+    '<@Joe>\'s calendar for today:\nTUES - November 19\n\t\t08:30 AM - 04:30 PM: Full Day Event\n'
+  );
 });
 
 test('Get personal week events when there are multiple events', () => {
-  expect(index.eventRecipientToString('self','self','week') + index.eventsToString(weekEvents)).toBe('Your calendar for the week:\nTUES - November 26\n\t\t08:30 AM - 09:30 AM: Weekly Stand up\nTHURS - November 28\n\t\t12:45 PM - 01:00 PM: Afternoon hang\n');
+  expect(index.eventRecipientToString('self','self','week') + index.eventsToString(weekEvents)).toBe(
+    'Your calendar for the week:\nTUES - November 26\n\t\t08:30 AM - 09:30 AM: Weekly Stand up\nTHURS - November 28\n\t\t12:45 PM - 01:00 PM: Afternoon hang\n'
+  );
 });
 
 test('Get personal week events with 1 event', () => {
-  expect(index.eventRecipientToString('self','self','week') + index.eventsToString(preNoonPostNoonEvent)).toBe('Your calendar for the week:\nTUES - November 19\n\t\t11:59 AM - 12:01 PM: 1 Bite Lunch Time\n');
+  expect(index.eventRecipientToString('self','self','week') + index.eventsToString(preNoonPostNoonEvent)).toBe(
+    'Your calendar for the week:\nTUES - November 19\n\t\t11:59 AM - 12:01 PM: 1 Bite Lunch Time\n'
+  );
 });
 
 test('Get team member\'s week events when there are multiple events', () => {
-  expect(index.eventRecipientToString('Joe','self','week') + index.eventsToString(weekEvents)).toBe('<@Joe>\'s calendar for the week:\nTUES - November 26\n\t\t08:30 AM - 09:30 AM: Weekly Stand up\nTHURS - November 28\n\t\t12:45 PM - 01:00 PM: Afternoon hang\n');
+  expect(index.eventRecipientToString('Joe','self','week') + index.eventsToString(weekEvents)).toBe(
+    '<@Joe>\'s calendar for the week:\nTUES - November 26\n\t\t08:30 AM - 09:30 AM: Weekly Stand up\nTHURS - November 28\n\t\t12:45 PM - 01:00 PM: Afternoon hang\n'
+  );
 });
 
 test('Get team member\'s week events with 1 event', () => {
-  expect(index.eventRecipientToString('Joe','self','week') + index.eventsToString(preNoonPostNoonEvent)).toBe('<@Joe>\'s calendar for the week:\nTUES - November 19\n\t\t11:59 AM - 12:01 PM: 1 Bite Lunch Time\n');
+  expect(index.eventRecipientToString('Joe','self','week') + index.eventsToString(preNoonPostNoonEvent)).toBe(
+    '<@Joe>\'s calendar for the week:\nTUES - November 19\n\t\t11:59 AM - 12:01 PM: 1 Bite Lunch Time\n'
+  );
 });
 
 test('Get week events when weekdays carry over into a different month', () => {
-  expect(index.eventsToString(weekIntoNewMonthEvents)).toBe('THURS - October 31\n\t\t09:30 AM - 10:30 AM: End of month event\nFRI - November 1\n\t\t01:45 PM - 02:00 PM: Start of month event\n');
+  expect(index.eventsToString(weekIntoNewMonthEvents)).toBe(
+    'THURS - October 31\n\t\t09:30 AM - 10:30 AM: End of month event\nFRI - November 1\n\t\t01:45 PM - 02:00 PM: Start of month event\n'
+  );
 });
 
 test('Get personal free time with no events for the day', () => {
-  expect(index.eventRecipientToString('self','self','free') + index.freeTimeToString(emptyEventList)).toBe('Your free time for today:\n\t\tYou\'re free all day!');
+  expect(index.eventRecipientToString('self','self','free') + index.freeTimeToString(emptyEventList)).toBe(
+    'Your free time for today:\n\t\tYou\'re free all day!'
+  );
 });
 
 test('Get personal free time with 1 event for the day', () => {
-  expect(index.eventRecipientToString('self','self','free') + index.freeTimeToString(preNoonPostNoonEvent)).toBe('Your free time for today:\nTUES - November 19\n\t\t08:00 AM - 11:59 AM\n\t\t12:01 PM - 04:30 PM');
+  expect(index.eventRecipientToString('self','self','free') + index.freeTimeToString(preNoonPostNoonEvent)).toBe(
+    'Your free time for today:\nTUES - November 19\n\t\t08:00 AM - 11:59 AM\n\t\t12:01 PM - 04:30 PM'
+  );
 });
 
 test('Get personal free time with multiple events for the day', () => {
-  expect(index.eventRecipientToString('self','self','free') + index.freeTimeToString(dayEvents)).toBe('Your free time for today:\nTUES - November 19\n\t\t08:00 AM - 08:30 AM\n\t\t09:30 AM - 12:45 PM\n\t\t01:00 PM - 04:30 PM');
+  expect(index.eventRecipientToString('self','self','free') + index.freeTimeToString(dayEvents)).toBe(
+    'Your free time for today:\nTUES - November 19\n\t\t08:00 AM - 08:30 AM\n\t\t09:30 AM - 12:45 PM\n\t\t01:00 PM - 04:30 PM'
+  );
 });
 
 test('Get team member\'s free time with no events for the day', () => {
-  expect(index.eventRecipientToString('Joe','self','free') + index.freeTimeToString(emptyEventList)).toBe('<@Joe>\'s free time for today:\n\t\tYou\'re free all day!');
+  expect(index.eventRecipientToString('Joe','self','free') + index.freeTimeToString(emptyEventList)).toBe(
+    '<@Joe>\'s free time for today:\n\t\tYou\'re free all day!'
+  );
 });
 
 test('Get team member\'s free time with 1 event for the day', () => {
-  expect(index.eventRecipientToString('Joe','self','free') + index.freeTimeToString(preNoonPostNoonEvent)).toBe('<@Joe>\'s free time for today:\nTUES - November 19\n\t\t08:00 AM - 11:59 AM\n\t\t12:01 PM - 04:30 PM');
+  expect(index.eventRecipientToString('Joe','self','free') + index.freeTimeToString(preNoonPostNoonEvent)).toBe(
+    '<@Joe>\'s free time for today:\nTUES - November 19\n\t\t08:00 AM - 11:59 AM\n\t\t12:01 PM - 04:30 PM'
+  );
 });
 
 test('Get team member\'s free time with multiple events for the day', () => {
-  expect(index.eventRecipientToString('Joe','self','free') + index.freeTimeToString(dayEvents)).toBe('<@Joe>\'s free time for today:\nTUES - November 19\n\t\t08:00 AM - 08:30 AM\n\t\t09:30 AM - 12:45 PM\n\t\t01:00 PM - 04:30 PM');
+  expect(index.eventRecipientToString('Joe','self','free') + index.freeTimeToString(dayEvents)).toBe(
+    '<@Joe>\'s free time for today:\nTUES - November 19\n\t\t08:00 AM - 08:30 AM\n\t\t09:30 AM - 12:45 PM\n\t\t01:00 PM - 04:30 PM'
+  );
 });
 
 test('Get username from message', () => {
