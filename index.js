@@ -192,7 +192,7 @@ function listNextFiveEvents(auth, userSent, destUser) {
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
     const events = res.data.items;
-    const retString = eventsToString(events, userSent);
+    const retString = eventsToString(events, userSent, destUser);
     bot.postMessageToUser(destUsername, retString);
   });
 }
@@ -215,7 +215,7 @@ function listMorningEvents(auth, user, destUser) {
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
     const events = res.data.items;
-    const retString = eventsToString(events, user);
+    const retString = eventsToString(events, user, destUser);
     bot.postMessageToUser(destUsername, retString);
   });
 }
@@ -239,7 +239,7 @@ function listDayEvents(auth, userSent, destUser) {
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
     const events = res.data.items;
-    const retString = eventsToString(events, userSent);
+    const retString = eventsToString(events, userSent, destUser);
     bot.postMessageToUser(destUsername, retString);
   });
 }
@@ -262,7 +262,7 @@ function listWeekEvents(auth, userSent, destUser) {
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
     const events = res.data.items;
-    const retString = eventsToString(events, userSent);
+    const retString = eventsToString(events, userSent, destUser);
     bot.postMessageToUser(destUsername, retString);
   });
 }
@@ -346,15 +346,18 @@ function parseMonthOfEvent(index) {
 }
 
 /**
-* Canverts an event object into a string
+* Converts an event object into a string
 * @param {Event} events
 * @param {String} userSent
+* @param {String} destUser
 * @return {String}
 */
-function eventsToString(events, userSent) {
+function eventsToString(events, userSent, destUser) {
   if (events.length) {
     let eventString = '';
-    eventString += '<@'+userSent+'> has sent you part of their calendar:\n';
+    if (!checkIfSameUser(userSent, destUser)) {      
+      eventString += '<@'+userSent+'> has sent you part of their calendar:\n';
+    }
     let prevDayNum = -1;
     events.map((event, i) => {
       const start = event.start.dateTime || event.start.date;
@@ -370,6 +373,16 @@ function eventsToString(events, userSent) {
   } else {
     return 'No upcoming events today.';
   }
+}
+
+/**
+  * Compares the user sending the command with the destination user
+  * @param {String} userSent
+  * @param {String} destUser
+  * @return {Boolean}
+  */
+function checkIfSameUser(userSent, destUser) {
+  return(userSent === destUser);
 }
 
 module.exports = {getUserFromMessage, getCurrentDate, getDaysAwayDate, dateAppendZero, parseTimeOfEvent, parseWeekdayOfEvent, parseMonthOfEvent};
