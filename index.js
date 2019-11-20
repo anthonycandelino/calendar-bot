@@ -289,22 +289,44 @@ function listWeekEvents(auth, userSent, destUser) {
 * @param {String} userOne
 * @param {String} userTwo
 */
-function bookTime(userOne, userTwo) {
+async function bookTime(userOne, userTwo) {
     fs.readFile('credentials.json', (err, content) => {
         if (err) return console.log('Error loading client secret file:', err);
         // Authorize a client with credentials, then call the Google Drive API.
-        const {client_secret, client_id, redirect_uris} = (JSON.parse(content)).installed;
-        const oAuth2ClientOne = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
-        const oAuth2ClientTwo = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
-        fs.readFile('users/'+userOne+'.txt', (err, token) => {
-          if (err) return;
-          oAuth2ClientOne.setCredentials(JSON.parse(token));
-        });
-        fs.readFile('users/'+userTwo+'.txt', (err, token) => {
-          if (err) return;
-          oAuth2ClientTwo.setCredentials(JSON.parse(token));
+        
+        var userOneEvents;
+        var userTwoEvents;
+        
+        var userAuth = fs.readFileSync('users/'+userOne+'.txt', 'utf8');
+          
+        getBookEvents(content,userAuth).then(result => {
+            userOneEvents = result;
         });
     });
+}
+
+/**
+* Checks for time between two users
+* @param {Object} content
+* @param {String} auth
+*/
+async function getBookEvents(content, auth) {
+        const credentials = JSON.parse(content);
+        const {client_secret, client_id, redirect_uris} = credentials.installed;
+        const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+        oAuth2Client.setCredentials(JSON.parse(auth));
+        const calendar = google.calendar({version: 'v3', oAuth2Client});
+        var events;
+        console.log(oAuth2Client);
+        calendar.events.list({
+            calendarId: 'primary',
+            timeMin: (getCurrentDate() + 'T07:00:00-05:00').toString(),
+            timeMax: (getCurrentDate() + 'T18:30:00-05:00').toString(),
+            singleEvents: true,
+            orderBy: 'startTime',
+        }).then(res => {
+            return res.data.items;
+        }).catch(err => console.log(err));
 }
 
 /**
