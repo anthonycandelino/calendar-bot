@@ -294,13 +294,13 @@ async function bookTime(userOne, userTwo) {
         if (err) return console.log('Error loading client secret file:', err);
         // Authorize a client with credentials, then call the Google Drive API.
         
-        var userOneEvents;
-        var userTwoEvents;
+        //var userOneEvents;
+        //var userTwoEvents;
         
         var userAuth = fs.readFileSync('users/'+userOne+'.txt', 'utf8');
           
         getBookEvents(content,userAuth).then(result => {
-            userOneEvents = result;
+            //userOneEvents = result;
         });
     });
 }
@@ -316,7 +316,7 @@ async function getBookEvents(content, auth) {
         const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
         oAuth2Client.setCredentials(JSON.parse(auth));
         const calendar = google.calendar({version: 'v3', oAuth2Client});
-        var events;
+        //var events;
         console.log(oAuth2Client);
         calendar.events.list({
             calendarId: 'primary',
