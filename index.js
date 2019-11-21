@@ -23,7 +23,7 @@ const bot = new SlackBot({
   name: 'calendarbot',
 });
 
-var dayStruct = {
+const dayStruct = {
   calendarId: 'primary',
   timeMin: (getCurrentDate() + 'T07:00:00-05:00').toString(),
   timeMax: (getCurrentDate() + 'T18:30:00-05:00').toString(),
@@ -31,7 +31,7 @@ var dayStruct = {
   orderBy: 'startTime',
 };
 
-var nextFiveStruct = {
+const nextFiveStruct = {
   calendarId: 'primary',
   timeMin: (new Date()).toISOString(),
   maxResults: 5,
@@ -39,7 +39,7 @@ var nextFiveStruct = {
   orderBy: 'startTime',
 };
 
-var morningStruct = {
+const morningStruct = {
   calendarId: 'primary',
   timeMin: (getCurrentDate() + 'T07:00:00-05:00').toString(),
   timeMax: (getCurrentDate() + 'T12:00:00-05:00').toString(),
@@ -47,7 +47,7 @@ var morningStruct = {
   orderBy: 'startTime',
 };
 
-var weekStruct = {
+const weekStruct = {
   calendarId: 'primary',
   timeMin: (getCurrentDate() + 'T07:00:00-05:00').toString(),
   timeMax: (getDaysAwayDate(7) + 'T18:30:00-05:00').toString(),
@@ -70,6 +70,7 @@ bot.on('message', (data) => {
 /**
   * Handles message sent to calendar-bot
   * @param {String} data
+  * @return {int}
   */
 function handleMessage(data) {
   const message = data.text;
@@ -91,7 +92,7 @@ function handleMessage(data) {
     bot.postMessageToUser(username, helpMessageString);
   } else if (/^calendar\sfive$/.test(message)) {
     callApiFunction(user, user, listNextFiveEvents);
-  }  else if (/^calendar\sfree$/.test(message)) {
+  } else if (/^calendar\sfree$/.test(message)) {
     callApiFunction(user, user, listFreeTime);
   } else if (/^calendar\sfree\s<@\w+>$/.test(message)) {
     callApiFunction(user, getUserFromMessage(message), listFreeTime);
@@ -181,7 +182,7 @@ function authorize(credentials, callback, userCalendar, directedUser) {
 * @param {String} user
 */
 function getAccessToken(oAuth2Client, callback, user) {
-  const authUrl = oAuth2Client.generateAuthUrl({access_type: 'offline',scope: SCOPES,});
+  const authUrl = oAuth2Client.generateAuthUrl({access_type: 'offline', scope: SCOPES});
   const username = getNameFromId(user);// replace with bot messaging user
   bot.postMessageToUser(username, 'Visit the following URL and paste the verification here\n'+authUrl+'\nFormat it in the following way:\nURL: [DATA FROM AUTHENTICATION]');
 }
@@ -369,7 +370,7 @@ function parseMonthOfEvent(index) {
 */
 function eventsToString(events) {
   if (events.length) {
-    let eventString = '';    
+    let eventString = '';
     let prevDayNum = -1;
     events.map((event, i) => {
       const start = event.start.dateTime || event.start.date;
@@ -383,7 +384,7 @@ function eventsToString(events) {
     });
     return eventString;
   } else {
-    eventString = 'No upcoming events.';    
+    eventString = 'No upcoming events.';
     return eventString;
   }
 }
@@ -395,7 +396,7 @@ function eventsToString(events) {
 */
 function freeTimeToString(events) {
   if (events.length) {
-    let eventString = '';    
+    let eventString = '';
     let prevDayNum = -1;
     events.map((event, i) => {
       if (i === 0) {
@@ -413,7 +414,7 @@ function freeTimeToString(events) {
         eventString += `${parseTimeOfEvent(start)}\n\t\t${parseTimeOfEvent(end)} - `;
       }
     });
-    eventString += '04:30 PM'
+    eventString += '04:30 PM';
     return eventString;
   } else {
     return '\t\tYou\'re free all day!';
@@ -422,17 +423,17 @@ function freeTimeToString(events) {
 
 /**
  * Creates prepended string for event message
- * @param {String} userSent 
- * @param {String} destUser 
- * @param {String} eventType 
+ * @param {String} userSent
+ * @param {String} destUser
+ * @param {String} eventType
  * @return {String}
  */
 function eventRecipientToString(userSent, destUser, eventType = null) {
   let userString = '';
   if (userSent === destUser) {
-    userString = 'Your ';        
+    userString = 'Your ';
   } else {
-    userString = '<@'+userSent+'>\'s ' ;
+    userString = '<@'+userSent+'>\'s ';
   }
 
   if (eventType === 'free') {
@@ -454,14 +455,14 @@ function eventRecipientToString(userSent, destUser, eventType = null) {
 
 module.exports = {
   handleMessage,
-  getUserFromMessage, 
-  getCurrentDate, 
-  getDaysAwayDate, 
-  dateAppendZero, 
-  parseTimeOfEvent, 
-  parseWeekdayOfEvent, 
-  parseMonthOfEvent, 
-  eventsToString, 
-  freeTimeToString, 
-  eventRecipientToString
+  getUserFromMessage,
+  getCurrentDate,
+  getDaysAwayDate,
+  dateAppendZero,
+  parseTimeOfEvent,
+  parseWeekdayOfEvent,
+  parseMonthOfEvent,
+  eventsToString,
+  freeTimeToString,
+  eventRecipientToString,
 };
