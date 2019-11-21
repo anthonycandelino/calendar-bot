@@ -5,11 +5,55 @@ const {google} = require('googleapis');
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
 
+const helpMessageString = 'Welcome to the calendar bot! Here is a list of commands:\n' +
+'1) calendar help - lists commands for the calendar bot (you\'re donig this right now!)\n' +
+'2) calendar five - lists the next five events you have in your calendar\n' +
+'3) calendar morning @[user] - sends your morning calendar to the specified user or leave it blank to messsage yourself\n' +
+'4) calendar day @[user] - sends your days calendar to the specified user or leave it blank to message yourself\n' +
+'5) calendar week @[user] - sends your week calendar to the specified user or leave it blank to message yourself\n' +
+'6) calendar free @[user] - sends your free time for today to the specified user or leave it blank to message yourself\n' +
+'7) calendar book @[user] @[user] - shows free time between two users\n' +
+'8) URL: [authentication] - used when first setting up your google accounr to a calendar\n';
+
+const daysOfWeek = ['SUN', 'MON', 'TUES', 'WED', 'THURS', 'FRI', 'SAT'];
+const monthOfYear = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 // Declares bot with token for slack group it is in
 const bot = new SlackBot({
   token: 'xoxb-759347243669-821664786679-vMYPENCAesn1EzDBSJp5QwZo',
   name: 'calendarbot',
 });
+
+const dayStruct = {
+  calendarId: 'primary',
+  timeMin: (getCurrentDate() + 'T07:00:00-05:00').toString(),
+  timeMax: (getCurrentDate() + 'T18:30:00-05:00').toString(),
+  singleEvents: true,
+  orderBy: 'startTime',
+};
+
+const nextFiveStruct = {
+  calendarId: 'primary',
+  timeMin: (new Date()).toISOString(),
+  maxResults: 5,
+  singleEvents: true,
+  orderBy: 'startTime',
+};
+
+const morningStruct = {
+  calendarId: 'primary',
+  timeMin: (getCurrentDate() + 'T07:00:00-05:00').toString(),
+  timeMax: (getCurrentDate() + 'T12:00:00-05:00').toString(),
+  singleEvents: true,
+  orderBy: 'startTime',
+};
+
+const weekStruct = {
+  calendarId: 'primary',
+  timeMin: (getCurrentDate() + 'T07:00:00-05:00').toString(),
+  timeMax: (getDaysAwayDate(7) + 'T18:30:00-05:00').toString(),
+  singleEvents: true,
+  orderBy: 'startTime',
+};
 
 // Start Handler
 bot.on('start', () => {});
@@ -19,15 +63,14 @@ bot.on('error', (err) => console.log(err));
 
 // Triggers bot when message is sent to it to handle
 bot.on('message', (data) => {
-  if (data.type !== 'message') {
-    return;
-  }
+  if (data.type !== 'message') return;
   handleMessage(data);
 });
 
 /**
   * Handles message sent to calendar-bot
   * @param {String} data
+  * @return {int}
   */
 function handleMessage(data) {
   const message = data.text;
@@ -35,39 +78,31 @@ function handleMessage(data) {
   if (/^calendar\sday$/.test(message)) {
     callApiFunction(user, user, listDayEvents);
   } else if (/^calendar\sday\s<@\w+>$/.test(message)) {
-    const dest = getUserFromMessage(message);
-    callApiFunction(user, dest, listDayEvents);
+    callApiFunction(user, getUserFromMessage(message), listDayEvents);
   } else if (/^calendar\sweek$/.test(message)) {
     callApiFunction(user, user, listWeekEvents);
   } else if (/^calendar\sweek\s<@\w+>$/.test(message)) {
-    const dest = getUserFromMessage(message);
-    callApiFunction(user, dest, listWeekEvents);
+    callApiFunction(user, getUserFromMessage(message), listWeekEvents);
   } else if (/^calendar\smorning$/.test(message)) {
     callApiFunction(user, user, listMorningEvents);
   } else if (/^calendar\smorning\s<@\w+>$/.test(message)) {
-    const dest = getUserFromMessage(message);
-    callApiFunction(user, dest, listMorningEvents);
+    callApiFunction(user, getUserFromMessage(message), listMorningEvents);
   } else if (/^calendar\shelp$/.test(message)) {
-    helpMessage(user);
+    const username = getNameFromId(user);
+    bot.postMessageToUser(username, helpMessageString);
   } else if (/^calendar\sfive$/.test(message)) {
     callApiFunction(user, user, listNextFiveEvents);
-  }  else if (/^calendar\sfree$/.test(message)) {
+  } else if (/^calendar\sfree$/.test(message)) {
     callApiFunction(user, user, listFreeTime);
   } else if (/^calendar\sfree\s<@\w+>$/.test(message)) {
-    const dest = getUserFromMessage(message);
-    callApiFunction(user, dest, listFreeTime);
+    callApiFunction(user, getUserFromMessage(message), listFreeTime);
   } else if (/^URL:\s.+$/.test(message)) {
     storeAuthentication(message.split(' ')[1], user);
-    } else if (/^calendar\sbook\s<@\w+>\s<@\w+>$/.test(message)) {
-        let res = message.split("@");
-        //Retrieve users from the message
-        let user1 = res[1].substring(0,res[1].indexOf('>'));
-        let user2 = res[2].substring(0,res[1].indexOf('>'));
-        bookTime(user1,user2);
   } else if (/^calendar\s.+$/.test(message)) {
-    const username = getNameFromId(user);
-    bot.postMessageToUser(username, 'Invalid command, please use \'calendar help\'');
-    }
+    bot.postMessageToUser(getNameFromId(user), 'Invalid command, please use \'calendar help\'');
+  } else {
+    return -1;
+  }
 }
 
 /**
@@ -79,23 +114,6 @@ function getUserFromMessage(message) {
   let dest = (message.match(/<@.+>/g))[0];
   dest = dest.substr(2, dest.length - 3);
   return dest;
-}
-
-/**
-  * Lists help options when user wants help using calendar bot
-  * @param {String} user
-  */
-function helpMessage(user) {
-  const username = getNameFromId(user);
-  bot.postMessageToUser(username, 'Welcome to the calendar bot! Here is a list of commands:\n' +
-    '1) calendar help - lists commands for the calendar bot (you\'re donig this right now!)\n' +
-    '2) calendar five - lists the next five events you have in your calendar\n' +
-    '3) calendar morning @[user] - sends your morning calendar to the specified user or leave it blank to messsage yourself\n' +
-    '4) calendar day @[user] - sends your days calendar to the specified user or leave it blank to message yourself\n' +
-    '5) calendar week @[user] - sends your week calendar to the specified user or leave it blank to message yourself\n' +
-    '6) calendar free @[user] - sends your free time for today to the specified user or leave it blank to message yourself\n' +
-    '7) calendar book @[user] @[user] - shows free time between two users\n' +
-    '8) URL: [authentication] - used when first setting up your google accounr to a calendar\n');
 }
 
 
@@ -164,13 +182,8 @@ function authorize(credentials, callback, userCalendar, directedUser) {
 * @param {String} user
 */
 function getAccessToken(oAuth2Client, callback, user) {
-  const authUrl = oAuth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: SCOPES,
-  });
-  // replace with bot messaging user
-  const username = getNameFromId(user);
-
+  const authUrl = oAuth2Client.generateAuthUrl({access_type: 'offline', scope: SCOPES});
+  const username = getNameFromId(user);// replace with bot messaging user
   bot.postMessageToUser(username, 'Visit the following URL and paste the verification here\n'+authUrl+'\nFormat it in the following way:\nURL: [DATA FROM AUTHENTICATION]');
 }
 
@@ -196,17 +209,10 @@ function getNameFromId(user) {
 function listNextFiveEvents(auth, userSent, destUser) {
   const destUsername = getNameFromId(destUser);
   const calendar = google.calendar({version: 'v3', auth});
-  calendar.events.list({
-    calendarId: 'primary',
-    timeMin: (new Date()).toISOString(),
-    maxResults: 5,
-    singleEvents: true,
-    orderBy: 'startTime',
-  }, (err, res) => {
+  calendar.events.list(nextFiveStruct, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
-    const events = res.data.items;
     let retString = eventRecipientToString(userSent, destUser, 'five');
-    retString += eventsToString(events, userSent);
+    retString += eventsToString(res.data.items, userSent);
     bot.postMessageToUser(destUsername, retString);
   });
 }
@@ -220,17 +226,10 @@ function listNextFiveEvents(auth, userSent, destUser) {
 function listMorningEvents(auth, userSent, destUser) {
   const destUsername = getNameFromId(destUser);
   const calendar = google.calendar({version: 'v3', auth});
-  calendar.events.list({
-    calendarId: 'primary',
-    timeMin: (getCurrentDate() + 'T07:00:00-05:00').toString(),
-    timeMax: (getCurrentDate() + 'T12:00:00-05:00').toString(),
-    singleEvents: true,
-    orderBy: 'startTime',
-  }, (err, res) => {
+  calendar.events.list(morningStruct, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
-    const events = res.data.items;
     let retString = eventRecipientToString(userSent, destUser, 'morning');
-    retString += eventsToString(events, userSent);
+    retString += eventsToString(res.data.items, userSent);
     bot.postMessageToUser(destUsername, retString);
   });
 }
@@ -245,17 +244,10 @@ function listDayEvents(auth, userSent, destUser) {
   // parse message for receiving user
   const destUsername = getNameFromId(destUser);
   const calendar = google.calendar({version: 'v3', auth});
-  calendar.events.list({
-    calendarId: 'primary',
-    timeMin: (getCurrentDate() + 'T07:00:00-05:00').toString(),
-    timeMax: (getCurrentDate() + 'T18:30:00-05:00').toString(),
-    singleEvents: true,
-    orderBy: 'startTime',
-  }, (err, res) => {
+  calendar.events.list(dayStruct, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
-    const events = res.data.items;
     let retString = eventRecipientToString(userSent, destUser, 'today');
-    retString += eventsToString(events, userSent);
+    retString += eventsToString(res.data.items, userSent);
     bot.postMessageToUser(destUsername, retString);
   });
 }
@@ -269,42 +261,12 @@ function listDayEvents(auth, userSent, destUser) {
 function listWeekEvents(auth, userSent, destUser) {
   const destUsername = getNameFromId(destUser);
   const calendar = google.calendar({version: 'v3', auth});
-  calendar.events.list({
-    calendarId: 'primary',
-    timeMin: (getCurrentDate() + 'T07:00:00-05:00').toString(),
-    timeMax: (getDaysAwayDate(7) + 'T18:30:00-05:00').toString(),
-    singleEvents: true,
-    orderBy: 'startTime',
-  }, (err, res) => {
+  calendar.events.list(weekStruct, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
-    const events = res.data.items;
     let retString = eventRecipientToString(userSent, destUser, 'week');
-    retString += eventsToString(events, userSent);
+    retString += eventsToString(res.data.items, userSent);
     bot.postMessageToUser(destUsername, retString);
   });
-}
-
-/**
-* Checks for time between two users
-* @param {String} userOne
-* @param {String} userTwo
-*/
-function bookTime(userOne, userTwo) {
-    fs.readFile('credentials.json', (err, content) => {
-        if (err) return console.log('Error loading client secret file:', err);
-        // Authorize a client with credentials, then call the Google Drive API.
-        const {client_secret, client_id, redirect_uris} = (JSON.parse(content)).installed;
-        const oAuth2ClientOne = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
-        const oAuth2ClientTwo = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
-        fs.readFile('users/'+userOne+'.txt', (err, token) => {
-          if (err) return;
-          oAuth2ClientOne.setCredentials(JSON.parse(token));
-        });
-        fs.readFile('users/'+userTwo+'.txt', (err, token) => {
-          if (err) return;
-          oAuth2ClientTwo.setCredentials(JSON.parse(token));
-        });
-    });
 }
 
 /**
@@ -317,17 +279,10 @@ function listFreeTime(auth, userSent, destUser) {
   // parse message for receiving user
   const destUsername = getNameFromId(destUser);
   const calendar = google.calendar({version: 'v3', auth});
-  calendar.events.list({
-    calendarId: 'primary',
-    timeMin: (getCurrentDate() + 'T07:00:00-05:00').toString(),
-    timeMax: (getCurrentDate() + 'T18:30:00-05:00').toString(),
-    singleEvents: true,
-    orderBy: 'startTime',
-  }, (err, res) => {
+  calendar.events.list(dayStruct, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
-    const events = res.data.items;
     let retString = eventRecipientToString(userSent, destUser, 'free');
-    retString += freeTimeToString(events, userSent);
+    retString += freeTimeToString(res.data.items, userSent);
     bot.postMessageToUser(destUsername, retString);
   });
 }
@@ -396,7 +351,6 @@ function parseTimeOfEvent(date) {
   * @return {String}
   */
 function parseWeekdayOfEvent(index) {
-  const daysOfWeek = ['SUN', 'MON', 'TUES', 'WED', 'THURS', 'FRI', 'SAT'];
   return daysOfWeek[index];
 }
 
@@ -406,7 +360,6 @@ function parseWeekdayOfEvent(index) {
   * @return {String}
   */
 function parseMonthOfEvent(index) {
-  const monthOfYear = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   return monthOfYear[index];
 }
 
@@ -417,7 +370,7 @@ function parseMonthOfEvent(index) {
 */
 function eventsToString(events) {
   if (events.length) {
-    let eventString = '';    
+    let eventString = '';
     let prevDayNum = -1;
     events.map((event, i) => {
       const start = event.start.dateTime || event.start.date;
@@ -431,7 +384,7 @@ function eventsToString(events) {
     });
     return eventString;
   } else {
-    eventString = 'No upcoming events.';    
+    eventString = 'No upcoming events.';
     return eventString;
   }
 }
@@ -443,7 +396,7 @@ function eventsToString(events) {
 */
 function freeTimeToString(events) {
   if (events.length) {
-    let eventString = '';    
+    let eventString = '';
     let prevDayNum = -1;
     events.map((event, i) => {
       if (i === 0) {
@@ -461,7 +414,7 @@ function freeTimeToString(events) {
         eventString += `${parseTimeOfEvent(start)}\n\t\t${parseTimeOfEvent(end)} - `;
       }
     });
-    eventString += '04:30 PM'
+    eventString += '04:30 PM';
     return eventString;
   } else {
     return '\t\tYou\'re free all day!';
@@ -470,17 +423,17 @@ function freeTimeToString(events) {
 
 /**
  * Creates prepended string for event message
- * @param {String} userSent 
- * @param {String} destUser 
- * @param {String} eventType 
+ * @param {String} userSent
+ * @param {String} destUser
+ * @param {String} eventType
  * @return {String}
  */
 function eventRecipientToString(userSent, destUser, eventType = null) {
   let userString = '';
   if (userSent === destUser) {
-    userString = 'Your ';        
+    userString = 'Your ';
   } else {
-    userString = '<@'+userSent+'>\'s ' ;
+    userString = '<@'+userSent+'>\'s ';
   }
 
   if (eventType === 'free') {
@@ -501,14 +454,15 @@ function eventRecipientToString(userSent, destUser, eventType = null) {
 }
 
 module.exports = {
-  getUserFromMessage, 
-  getCurrentDate, 
-  getDaysAwayDate, 
-  dateAppendZero, 
-  parseTimeOfEvent, 
-  parseWeekdayOfEvent, 
-  parseMonthOfEvent, 
-  eventsToString, 
-  freeTimeToString, 
-  eventRecipientToString
+  handleMessage,
+  getUserFromMessage,
+  getCurrentDate,
+  getDaysAwayDate,
+  dateAppendZero,
+  parseTimeOfEvent,
+  parseWeekdayOfEvent,
+  parseMonthOfEvent,
+  eventsToString,
+  freeTimeToString,
+  eventRecipientToString,
 };
