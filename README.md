@@ -1,3 +1,3 @@
 # botazo-calendar
 
-Repository for botazo's calendar slack bot project
+Repository calendar-bot that utilizes Google Calendar API to retrieve events in calendar or time between events and send them to team member or retrieve for personal use
