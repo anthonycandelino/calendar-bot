@@ -68,7 +68,16 @@ const weekIntoNewMonthEvents = [
   }
 ];
 
+const user = {
+  text:"",
+  user:"",
+};
+
 const emptyEventList = [];
+
+test('Test an invalid value for rejex', () => {
+  expect(index.handleMessage(user)).toBe(-1);
+});
 
 test('Get string for empty event list to string', () => {
   expect(index.eventsToString(emptyEventList)).toBe('No upcoming events.');
