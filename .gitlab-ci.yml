@@ -1,0 +1,26 @@
+image: node:latest
+
+stages:
+  - build
+  - lint
+  - test
+
+cache:
+  paths:
+    - node_modules/
+
+install_dependencies:
+    stage: build
+    script:
+      - npm install
+    artifacts:
+      paths:
+        - node_modules/
+
+run_linter:
+  stage: lint
+  script: ./node_modules/.bin/eslint --fix *.js
+
+run_tests:
+  stage: test
+  script: npm test
